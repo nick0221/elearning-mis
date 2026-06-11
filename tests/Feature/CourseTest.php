@@ -49,8 +49,8 @@ class CourseTest extends TestCase
             'difficulty' => 'beginner',
         ]);
 
-        // Student lacks permission — redirected by middleware
-        $response->assertStatus(302);
+        // Student lacks permission — policy denies access
+        $response->assertStatus(403);
     }
 
     public function test_course_owner_can_edit_course(): void

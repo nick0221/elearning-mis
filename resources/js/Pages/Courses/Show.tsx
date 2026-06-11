@@ -1,15 +1,19 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface Lesson {
     id: number;
     title: string;
     type: string;
+    duration_minutes?: number;
 }
 
 interface CourseModule {
     id: number;
     title: string;
+    description?: string;
     lessons: Lesson[];
 }
 
@@ -33,11 +37,12 @@ interface Course {
     created_at: string;
 }
 
-export default function Show({ course }: { course: Course }) {
+export default function Show({ course, enrollmentCount }: { course: Course; enrollmentCount: number }) {
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this course?')) {
-            router.delete(route('courses.destroy', course.id));
-        }
+        router.delete(route('courses.destroy', course.id));
+        setShowDeleteDialog(false);
     };
 
     const statusColors: Record<string, string> = {
@@ -52,6 +57,8 @@ export default function Show({ course }: { course: Course }) {
         advanced: 'bg-destructive/10 text-destructive',
     };
 
+    const totalLessons = course.modules.reduce((acc, mod) => acc + mod.lessons.length, 0);
+
     return (
         <AuthenticatedLayout
             header={<h2 className="text-xl font-semibold leading-tight text-foreground">{course.title}</h2>}
@@ -59,13 +66,14 @@ export default function Show({ course }: { course: Course }) {
             <Head title={course.title} />
 
             <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    {/* Course Header Card */}
                     <div className="bg-card shadow-sm sm:rounded-lg">
                         <div className="p-6">
-                            <div className="mb-6 flex items-center justify-between">
-                                <div className="flex gap-2">
-                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${statusColors[course.status]}`}>{course.status}</span>
-                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${difficultyColors[course.difficulty]}`}>{course.difficulty}</span>
+                            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-wrap gap-2">
+                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold capitalize ${statusColors[course.status]}`}>{course.status}</span>
+                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold capitalize ${difficultyColors[course.difficulty]}`}>{course.difficulty}</span>
                                     {course.category && (
                                         <span className="inline-flex rounded-full bg-muted px-2 text-xs font-semibold text-muted-foreground">{course.category.name}</span>
                                     )}
@@ -74,7 +82,7 @@ export default function Show({ course }: { course: Course }) {
                                     <Link href={route('courses.edit', course.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                                         Edit
                                     </Link>
-                                    <button onClick={handleDelete} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+                                    <button onClick={() => setShowDeleteDialog(true)} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
                                         Delete
                                     </button>
                                 </div>
@@ -84,49 +92,84 @@ export default function Show({ course }: { course: Course }) {
                                 <p className="mb-6 text-muted-foreground">{course.description}</p>
                             )}
 
-                            <div className="mb-6 grid grid-cols-2 gap-4 text-sm">
-                                {course.max_students && (
-                                    <div>
-                                        <span className="font-medium text-foreground">Max Students:</span>
-                                        <span className="ml-2 text-muted-foreground">{course.max_students}</span>
-                                    </div>
-                                )}
-                                {course.estimated_duration_minutes && (
-                                    <div>
-                                        <span className="font-medium text-foreground">Duration:</span>
-                                        <span className="ml-2 text-muted-foreground">{course.estimated_duration_minutes} min</span>
-                                    </div>
-                                )}
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                <div className="rounded-lg border border-border p-3 text-center">
+                                    <div className="text-2xl font-bold text-foreground">{course.modules.length}</div>
+                                    <div className="text-xs text-muted-foreground">Modules</div>
+                                </div>
+                                <div className="rounded-lg border border-border p-3 text-center">
+                                    <div className="text-2xl font-bold text-foreground">{totalLessons}</div>
+                                    <div className="text-xs text-muted-foreground">Lessons</div>
+                                </div>
+                                <div className="rounded-lg border border-border p-3 text-center">
+                                    <div className="text-2xl font-bold text-foreground">{enrollmentCount}</div>
+                                    <div className="text-xs text-muted-foreground">Enrolled</div>
+                                </div>
+                                <div className="rounded-lg border border-border p-3 text-center">
+                                    <div className="text-2xl font-bold text-foreground">{course.estimated_duration_minutes ? `${Math.round(course.estimated_duration_minutes / 60)}h` : '-'}</div>
+                                    <div className="text-xs text-muted-foreground">Duration</div>
+                                </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div>
-                                <h3 className="mb-4 text-lg font-medium text-foreground">Modules ({course.modules.length})</h3>
-                                {course.modules.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No modules yet. Edit the course to add modules.</p>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {course.modules.map((mod, idx) => (
-                                            <div key={mod.id} className="rounded-lg border border-border p-4">
-                                                <h4 className="font-medium text-foreground">Module {idx + 1}: {mod.title}</h4>
-                                                <p className="mt-1 text-sm text-muted-foreground">{mod.lessons.length} lessons</p>
-                                                {mod.lessons.length > 0 && (
-                                                    <ul className="mt-2 space-y-1">
-                                                        {mod.lessons.map((lesson) => (
-                                                            <li key={lesson.id} className="text-sm text-muted-foreground">
-                                                                - {lesson.title} ({lesson.type})
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
+                    {/* Modules Card */}
+                    <div className="bg-card shadow-sm sm:rounded-lg">
+                        <div className="p-6">
+                            <h3 className="mb-4 text-lg font-medium text-foreground">Modules & Lessons</h3>
+                            {course.modules.length === 0 ? (
+                                <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                                    <p className="text-sm text-muted-foreground">No modules yet.</p>
+                                    <Link href={route('courses.edit', course.id)} className="mt-2 inline-block text-sm text-accent hover:text-accent/80">
+                                        Add modules →
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {course.modules.map((mod, idx) => (
+                                        <div key={mod.id} className="rounded-lg border border-border">
+                                            <div className="flex items-center justify-between bg-muted/50 px-4 py-3">
+                                                <div>
+                                                    <span className="text-sm font-medium text-foreground">Module {idx + 1}</span>
+                                                    <span className="mx-2 text-muted-foreground">·</span>
+                                                    <span className="text-sm text-foreground">{mod.title}</span>
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">{mod.lessons.length} lessons</span>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                            {mod.lessons.length > 0 && (
+                                                <ul className="divide-y divide-border">
+                                                    {mod.lessons.map((lesson) => (
+                                                        <li key={lesson.id} className="flex items-center justify-between px-4 py-2">
+                                                            <span className="text-sm text-foreground">{lesson.title}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-muted-foreground capitalize">{lesson.type}</span>
+                                                                {lesson.duration_minutes && (
+                                                                    <span className="text-xs text-muted-foreground">{lesson.duration_minutes}m</span>
+                                                                )}
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={showDeleteDialog}
+                title="Delete Course"
+                message={`Are you sure you want to delete "${course.title}"? This action cannot be undone.`}
+                confirmLabel="Delete"
+                variant="danger"
+                onConfirm={handleDelete}
+                onCancel={() => setShowDeleteDialog(false)}
+            />
         </AuthenticatedLayout>
     );
 }
