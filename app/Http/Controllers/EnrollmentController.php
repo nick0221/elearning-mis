@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -23,10 +24,18 @@ class EnrollmentController extends Controller
             return back()->with('error', 'Course is full.');
         }
 
-        $course->enrollments()->create([
+        $enrollment = $course->enrollments()->create([
             'user_id' => $user->id,
             'status' => 'enrolled',
             'enrolled_at' => now(),
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'course_enrolled',
+            'subject_type' => Course::class,
+            'subject_id' => $course->id,
+            'properties' => ['course_title' => $course->title],
         ]);
 
         return back()->with('success', 'Enrolled successfully!');
@@ -36,13 +45,23 @@ class EnrollmentController extends Controller
     {
         $course->enrollments()->where('user_id', $request->user()->id)->delete();
 
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'course_unenrolled',
+            'subject_type' => Course::class,
+            'subject_id' => $course->id,
+            'properties' => ['course_title' => $course->title],
+        ]);
+
         return back()->with('success', 'Unenrolled successfully.');
     }
 
     public function myCourses(Request $request)
     {
         $enrollments = Enrollment::where('user_id', $request->user()->id)
-            ->with('course.category')
+            ->with(['course.category', 'course.modules.lessons.lessonCompletions' => function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            }])
             ->latest('enrolled_at')
             ->paginate(12);
 
@@ -69,6 +88,19 @@ class EnrollmentController extends Controller
         $completedLessons = $course->modules->sum(fn ($m) => $m->lessons->filter(fn ($l) => $l->lessonCompletions->isNotEmpty())->count());
         $progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
 
+        // Check if course is completed
+        if ($progress === 100 && $enrollment->status !== 'completed') {
+            $enrollment->update(['status' => 'completed', 'completed_at' => now()]);
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'course_completed',
+                'subject_type' => Course::class,
+                'subject_id' => $course->id,
+                'properties' => ['course_title' => $course->title],
+            ]);
+        }
+
         return Inertia::render('Courses/Learn', [
             'course' => $course,
             'enrollment' => $enrollment,
@@ -84,6 +116,14 @@ class EnrollmentController extends Controller
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             ['completed_at' => now()]
         );
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'lesson_completed',
+            'subject_type' => Lesson::class,
+            'subject_id' => $lesson->id,
+            'properties' => ['lesson_title' => $lesson->title],
+        ]);
 
         return back()->with('success', 'Lesson marked as complete.');
     }
