@@ -12,14 +12,14 @@ export default function Edit({ mustVerifyEmail, status }: { mustVerifyEmail: boo
             <Head title="Profile" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-background p-4 shadow sm:rounded-lg sm:p-8">
+                <div className="mx-auto max-w-4xl space-y-6 sm:px-6 lg:px-8">
+                    <div className="bg-card p-6 shadow-sm sm:rounded-lg sm:p-8">
                         <UpdateProfileInformationForm mustVerifyEmail={mustVerifyEmail} status={status} className="max-w-xl" />
                     </div>
-                    <div className="bg-background p-4 shadow sm:rounded-lg sm:p-8">
+                    <div className="bg-card p-6 shadow-sm sm:rounded-lg sm:p-8">
                         <UpdatePasswordForm className="max-w-xl" />
                     </div>
-                    <div className="bg-background p-4 shadow sm:rounded-lg sm:p-8">
+                    <div className="bg-card p-6 shadow-sm sm:rounded-lg sm:p-8">
                         <DeleteUserForm className="max-w-xl" />
                     </div>
                 </div>

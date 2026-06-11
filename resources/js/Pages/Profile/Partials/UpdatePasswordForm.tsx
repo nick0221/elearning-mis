@@ -52,7 +52,6 @@ export default function UpdatePasswordForm({ className = '' }: { className?: str
                         value={data.current_password}
                         onChange={(e) => setData('current_password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="current-password"
                     />
                     <InputError message={errors.current_password} className="mt-2" />
@@ -66,7 +65,6 @@ export default function UpdatePasswordForm({ className = '' }: { className?: str
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
                     <InputError message={errors.password} className="mt-2" />
@@ -79,14 +77,15 @@ export default function UpdatePasswordForm({ className = '' }: { className?: str
                         value={data.password_confirmation}
                         onChange={(e) => setData('password_confirmation', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
                     <InputError message={errors.password_confirmation} className="mt-2" />
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>
+                        {processing ? 'Saving...' : 'Save'}
+                    </PrimaryButton>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -94,7 +93,7 @@ export default function UpdatePasswordForm({ className = '' }: { className?: str
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-muted-foreground">Saved.</p>
+                        <p className="text-sm text-success">Saved.</p>
                     </Transition>
                 </div>
             </form>

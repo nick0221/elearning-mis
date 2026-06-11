@@ -4,6 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -15,10 +16,28 @@ export default function UpdateProfileInformation({
     className?: string;
 }) {
     const user = usePage().props.auth.user;
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: user?.name ?? '',
         email: user?.email ?? '',
+        avatar: null as File | null,
+        bio: user?.bio ?? '',
+        timezone: user?.timezone ?? '',
     });
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('avatar', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,11 +54,41 @@ export default function UpdateProfileInformation({
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
+                {/* Avatar Upload */}
+                <div>
+                    <InputLabel value="Avatar" />
+                    <div className="mt-2 flex items-center gap-4">
+                        {avatarPreview ? (
+                            <img src={avatarPreview} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
+                        ) : (
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-2xl font-bold text-muted-foreground">
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleAvatarChange}
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                            >
+                                Change avatar
+                            </button>
+                            <p className="mt-1 text-xs text-muted-foreground">JPG, PNG or GIF. Max 2MB.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <InputLabel htmlFor="name" value="Name" />
                     <TextInput
                         id="name"
-                        className="mt-1 block w-full"
                         value={data.name}
                         onChange={(e) => setData('name', e.target.value)}
                         required
@@ -54,13 +103,36 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
                         required
                         autoComplete="username"
                     />
                     <InputError className="mt-2" message={errors.email} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="bio" value="Bio" />
+                    <textarea
+                        id="bio"
+                        value={data.bio}
+                        onChange={(e) => setData('bio', e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        placeholder="Tell us about yourself..."
+                    />
+                    <InputError className="mt-2" message={errors.bio} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="timezone" value="Timezone" />
+                    <TextInput
+                        id="timezone"
+                        value={data.timezone}
+                        onChange={(e) => setData('timezone', e.target.value)}
+                        placeholder="UTC"
+                    />
+                    <InputError className="mt-2" message={errors.timezone} />
                 </div>
 
                 {mustVerifyEmail && user?.email_verified_at === null && (
@@ -85,7 +157,9 @@ export default function UpdateProfileInformation({
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing}>
+                        {processing ? 'Saving...' : 'Save'}
+                    </PrimaryButton>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -93,7 +167,7 @@ export default function UpdateProfileInformation({
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-muted-foreground">Saved.</p>
+                        <p className="text-sm text-success">Saved.</p>
                     </Transition>
                 </div>
             </form>
