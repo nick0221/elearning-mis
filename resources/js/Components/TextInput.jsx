@@ -1,8 +1,7 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 
-export default forwardRef(function TextInput(
-    { type = 'text', className = '', isFocused = false, ...props },
-    ref,
+export default function TextInput(
+    { type = 'text', className = '', isFocused = false, ref, ...props },
 ) {
     const localRef = useRef<HTMLInputElement>(null);
 
@@ -27,4 +26,4 @@ export default forwardRef(function TextInput(
             ref={localRef}
         />
     );
-});
+}
