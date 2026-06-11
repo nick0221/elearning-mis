@@ -1,19 +1,28 @@
-import { useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-export default function TextInput(
-    { type = 'text', className = '', isFocused = false, ref, ...props },
-) {
-    const localRef = useRef<HTMLInputElement>(null);
-
-    useImperativeHandle(ref, () => ({
-        focus: () => localRef.current?.focus(),
-    }));
+export default function TextInput({
+    type = 'text',
+    className = '',
+    isFocused = false,
+    ref,
+    ...props
+}) {
+    const localRef = useRef(null);
 
     useEffect(() => {
         if (isFocused) {
             localRef.current?.focus();
         }
     }, [isFocused]);
+
+    const setRef = (el) => {
+        localRef.current = el;
+        if (typeof ref === 'function') {
+            ref(el);
+        } else if (ref) {
+            ref.current = el;
+        }
+    };
 
     return (
         <input
@@ -23,7 +32,7 @@ export default function TextInput(
                 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ' +
                 className
             }
-            ref={localRef}
+            ref={setRef}
         />
     );
 }
