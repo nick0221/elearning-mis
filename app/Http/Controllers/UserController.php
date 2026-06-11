@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +15,8 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', User::class);
+
         $query = User::with('roles');
 
         if ($search = $request->input('search')) {
@@ -35,22 +40,18 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::all();
+        $this->authorize('create', User::class);
+
+        $roles = $this->getAllowedRoles();
 
         return Inertia::render('Users/Create', [
             'roles' => $roles,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|exists:roles,name',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -61,13 +62,23 @@ class UserController extends Controller
 
         $user->assignRole($validated['role']);
 
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'user_created',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'properties' => ['email' => $user->email, 'role' => $validated['role']],
+        ]);
+
         return redirect()->route('users.index')
             ->with('success', 'User created successfully.');
     }
 
     public function show(User $user)
     {
-        $user->load('roles');
+        $this->authorize('view', $user);
+
+        $user->load('roles', 'activityLogs');
 
         return Inertia::render('Users/Show', [
             'user' => $user,
@@ -76,8 +87,10 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $this->authorize('update', $user);
+
         $user->load('roles');
-        $roles = Role::all();
+        $roles = $this->getAllowedRoles();
 
         return Inertia::render('Users/Edit', [
             'user' => $user,
@@ -85,17 +98,9 @@ class UserController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => "required|email|unique:users,email,{$user->id}",
-            'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|string|exists:roles,name',
-            'is_active' => 'boolean',
-            'bio' => 'nullable|string|max:500',
-            'timezone' => 'nullable|string|max:50',
-        ]);
+        $validated = $request->validated();
 
         $data = [
             'name' => $validated['name'],
@@ -109,8 +114,21 @@ class UserController extends Controller
             $data['password'] = Hash::make($validated['password']);
         }
 
+        $oldRole = $user->getRoleNames()->first();
         $user->update($data);
         $user->syncRoles([$validated['role']]);
+
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'user_updated',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'properties' => [
+                'changes' => array_diff($data, $user->getOriginal()),
+                'old_role' => $oldRole,
+                'new_role' => $validated['role'],
+            ],
+        ]);
 
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully.');
@@ -118,9 +136,31 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $this->authorize('delete', $user);
+
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'user_deleted',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'properties' => ['email' => $user->email, 'name' => $user->name],
+        ]);
+
         $user->delete();
 
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    protected function getAllowedRoles()
+    {
+        $user = $this->user();
+
+        if ($user->hasRole('super-admin')) {
+            return Role::all();
+        }
+
+        // System-Admin can only assign Student and Member roles
+        return Role::whereIn('name', ['student', 'member'])->get();
     }
 }

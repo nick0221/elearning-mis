@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -7,6 +8,7 @@ interface User {
     name: string;
     email: string;
     is_active: boolean;
+    avatar?: string;
     roles: Array<{ name: string }>;
     created_at: string;
 }
@@ -29,6 +31,11 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
 
     const handleRoleFilter = (role: string) => {
         router.get(route('users.index'), { search, role }, { preserveState: true });
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        router.get(route('users.index'), {}, { preserveState: true });
     };
 
     const roleColors: Record<string, string> = {
@@ -72,7 +79,13 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
                         </Link>
                     </div>
 
-                    <div className="mb-4 flex gap-2">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        <button
+                            onClick={clearFilters}
+                            className={`rounded-full px-3 py-1 text-xs font-medium ${!filters.role ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                        >
+                            All ({users.total})
+                        </button>
                         {['super-admin', 'system-admin', 'instructor', 'student', 'member'].map((role) => (
                             <button
                                 key={role}
@@ -86,45 +99,71 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
                         ))}
                     </div>
 
-                    <div className="overflow-hidden bg-card shadow-sm sm:rounded-lg">
-                        <table className="min-w-full divide-y divide-border">
-                            <thead className="bg-muted">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Role</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border bg-card">
-                                {users.data.map((user) => (
-                                    <tr key={user.id} className="hover:bg-muted/50">
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="text-sm font-medium text-foreground">{user.name}</div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${roleColors[user.roles?.[0]?.name] || 'bg-muted text-muted-foreground'}`}>
-                                                {user.roles?.[0]?.name || 'No role'}
-                                            </span>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${user.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                                                {user.is_active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm">
-                                            <Link href={route('users.edit', user.id)} className="text-accent hover:text-accent/80 mr-3">Edit</Link>
-                                            <Link href={route('users.show', user.id)} className="text-info hover:text-info/80">View</Link>
-                                        </td>
+                    {users.data.length === 0 ? (
+                        <EmptyState
+                            title="No users found"
+                            description={filters.search || filters.role ? 'Try adjusting your search or filters.' : 'Get started by creating your first user.'}
+                            action={
+                                filters.search || filters.role ? (
+                                    <button onClick={clearFilters} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                                        Clear Filters
+                                    </button>
+                                ) : (
+                                    <Link href={route('users.create')} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                        Create User
+                                    </Link>
+                                )
+                            }
+                        />
+                    ) : (
+                        <div className="overflow-hidden bg-card shadow-sm sm:rounded-lg">
+                            <table className="min-w-full divide-y divide-border">
+                                <thead className="bg-muted">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">User</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-border bg-card">
+                                    {users.data.map((user) => (
+                                        <tr key={user.id} className="hover:bg-muted/50">
+                                            <td className="whitespace-nowrap px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    {user.avatar ? (
+                                                        <img src={user.avatar} alt={user.name} className="h-10 w-10 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
+                                                            {user.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div className="text-sm font-medium text-foreground">{user.name}</div>
+                                                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-6 py-4">
+                                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${roleColors[user.roles?.[0]?.name] || 'bg-muted text-muted-foreground'}`}>
+                                                    {user.roles?.[0]?.name || 'No role'}
+                                                </span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-6 py-4">
+                                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${user.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                                    {user.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm">
+                                                <Link href={route('users.edit', user.id)} className="text-accent hover:text-accent/80 mr-3">Edit</Link>
+                                                <Link href={route('users.show', user.id)} className="text-info hover:text-info/80">View</Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {users.last_page > 1 && (
                         <div className="mt-4 flex justify-center gap-1">
