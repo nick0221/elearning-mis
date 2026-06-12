@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
+import RichTextContent from '@/Components/RichTextContent';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -177,7 +178,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     </div>
                                     {activeTab === 'content' && (
                                         <div className="mt-4 rounded-lg border border-border bg-card p-6">
-                                            <div className="prose prose-slate max-w-none text-foreground whitespace-pre-wrap">{activeLesson.content}</div>
+                                            <RichTextContent content={activeLesson.content || ''} />
                                         </div>
                                     )}
                                     {activeTab === 'notes' && (
