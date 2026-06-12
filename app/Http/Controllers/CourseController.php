@@ -87,11 +87,15 @@ class CourseController extends Controller
     {
         $this->authorize('view', $course);
 
+        $user = request()->user();
         $course->load(['category', 'instructors', 'modules.lessons', 'enrollments']);
+
+        $isEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
 
         return Inertia::render('Courses/Show', [
             'course' => $course,
             'enrollmentCount' => $course->enrollments()->count(),
+            'isEnrolled' => $isEnrolled,
         ]);
     }
 

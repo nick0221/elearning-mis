@@ -38,8 +38,8 @@ interface Course {
     created_at: string;
 }
 
-export default function Show({ course, enrollmentCount }: { course: Course; enrollmentCount: number }) {
-    const { canCreateCourses, canEditAnyCourse } = usePermission();
+export default function Show({ course, enrollmentCount, isEnrolled }: { course: Course; enrollmentCount: number; isEnrolled: boolean }) {
+    const { canCreateCourses, canEditAnyCourse, canTakeAssessments } = usePermission();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const canEdit = canEditAnyCourse() || course.instructors?.some((i) => i.id === usePermission().user?.id);
 
@@ -118,6 +118,27 @@ export default function Show({ course, enrollmentCount }: { course: Course; enro
                                     <div className="text-xs text-muted-foreground">Duration</div>
                                 </div>
                             </div>
+
+                            {/* Enroll / Continue Button */}
+                            {!canEdit && course.status === 'published' && (
+                                <div className="mt-6 flex gap-3">
+                                    {isEnrolled ? (
+                                        <Link
+                                            href={route('courses.learn', course.id)}
+                                            className="rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                                        >
+                                            Continue Learning →
+                                        </Link>
+                                    ) : (
+                                        <form action={route('courses.enroll', course.id)} method="POST">
+                                            <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
+                                            <button type="submit" className="rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                                Enroll in this Course
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
