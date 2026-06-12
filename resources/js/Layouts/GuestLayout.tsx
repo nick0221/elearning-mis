@@ -1,4 +1,5 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import FlashMessages from '@/Components/FlashMessages';
 import { Link } from '@inertiajs/react';
 
 export default function GuestLayout({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ export default function GuestLayout({ children }: { children: React.ReactNode })
                     &copy; {new Date().getFullYear()} E-Learning MIS. All rights reserved.
                 </p>
             </div>
+            <FlashMessages />
         </div>
     );
 }

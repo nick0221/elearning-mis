@@ -1,4 +1,5 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import FlashMessages from '@/Components/FlashMessages';
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
@@ -318,6 +319,7 @@ export default function AuthenticatedLayout({
 
                 {/* Page content */}
                 <main>{children}</main>
+                <FlashMessages />
             </div>
         </div>
     );
