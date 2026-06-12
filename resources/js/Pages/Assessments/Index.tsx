@@ -25,7 +25,7 @@ interface PaginatedData {
     total: number;
 }
 
-export default function Index({ assessments, filters }: { assessments: PaginatedData; filters: { search?: string; type?: string } }) {
+export default function Index({ assessments, filters = {} }: { assessments: PaginatedData; filters?: { search?: string; type?: string } }) {
     const { canCreateAssessments } = usePermission();
     const [search, setSearch] = useState(filters.search || '');
 
