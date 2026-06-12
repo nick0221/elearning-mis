@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextContent from '@/Components/RichTextContent';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Attachment { id: number; filename: string; mime_type: string; size_bytes: number; }
 interface LessonCompletion { id: number; }
@@ -29,6 +29,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
     const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
 
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
@@ -44,6 +46,39 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         router.delete(route('courses.unenroll', course.id));
         setShowUnenrollDialog(false);
     };
+
+    const handleSpeedChange = (speed: number) => {
+        setPlaybackSpeed(speed);
+        if (videoRef) videoRef.playbackRate = speed;
+    };
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            if (e.key === 'ArrowRight' && nextLesson) setActiveLesson(nextLesson);
+            if (e.key === 'ArrowLeft' && prevLesson) setActiveLesson(prevLesson);
+            if (e.key === ' ' && activeLesson?.type === 'video' && videoRef) {
+                e.preventDefault();
+                videoRef.paused ? videoRef.play() : videoRef.pause();
+            }
+            if (e.key === 'f' && videoRef) {
+                videoRef.requestFullscreen();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [nextLesson, prevLesson, videoRef]);
+
+    // Save playback speed
+    useEffect(() => {
+        const saved = localStorage.getItem('playback-speed');
+        if (saved) setPlaybackSpeed(parseFloat(saved));
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('playback-speed', playbackSpeed.toString());
+    }, [playbackSpeed]);
 
     return (
         <AuthenticatedLayout
@@ -102,6 +137,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                                                     <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>
                                                                 )}
                                                                 <span className="truncate">{lesson.title}</span>
+                                                                {lesson.type === 'video' && <span className="text-[10px]">📹</span>}
+                                                                {lesson.type === 'audio' && <span className="text-[10px]">🎧</span>}
                                                             </span>
                                                         </button>
                                                     </li>
@@ -152,8 +189,39 @@ export default function Learn({ course, enrollment, progress }: { course: Course
 
                             {/* Video Player */}
                             {activeLesson.type === 'video' && activeLesson.video_url && (
-                                <div className="mb-6 aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg">
-                                    <iframe src={activeLesson.video_url} className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                                <div className="mb-4">
+                                    <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg">
+                                        <video
+                                            ref={setVideoRef}
+                                            src={activeLesson.video_url}
+                                            className="h-full w-full"
+                                            controls
+                                            playbackRate={playbackSpeed}
+                                        />
+                                    </div>
+                                    {/* Video Controls */}
+                                    <div className="mt-2 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-muted-foreground">Speed:</span>
+                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                                                <button
+                                                    key={speed}
+                                                    onClick={() => handleSpeedChange(speed)}
+                                                    className={`rounded px-2 py-1 text-xs font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                                >
+                                                    {speed}x
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <span>⌨️</span>
+                                            <span>Space: play/pause</span>
+                                            <span>·</span>
+                                            <span>F: fullscreen</span>
+                                            <span>·</span>
+                                            <span>←→: prev/next</span>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
