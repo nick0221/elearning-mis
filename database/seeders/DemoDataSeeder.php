@@ -86,12 +86,12 @@ class DemoDataSeeder extends Seeder
                 'instructor' => 1,
                 'modules' => [
                     ['title' => 'Python Fundamentals', 'lessons' => [
-                        ['title' => 'Setting Up Python', 'type' => 'text', 'content' => 'Python is a versatile programming language used in web development, data science, AI, and automation. Install Python from python.org and set up your development environment.'],
-                        ['title' => 'Data Types and Variables', 'type' => 'text', 'content' => 'Python has dynamic typing with built-in types: int, float, str, bool, list, tuple, dict, and set. Variables are created by assignment.'],
+                        ['title' => 'Setting Up Python', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/rfscVS0vtbw', 'content' => 'Python is a versatile programming language used in web development, data science, AI, and automation. This video covers installation and setup.', 'duration_minutes' => 20],
+                        ['title' => 'Data Types and Variables', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/9OeznAkylnQ', 'content' => 'Python has dynamic typing with built-in types: int, float, str, bool, list, tuple, dict, and set. Variables are created by assignment.', 'duration_minutes' => 15],
                     ]],
                     ['title' => 'Data Analysis with Pandas', 'lessons' => [
-                        ['title' => 'Introduction to Pandas', 'type' => 'text', 'content' => 'Pandas is the primary data manipulation library in Python. It provides DataFrames for tabular data and Series for one-dimensional data.'],
-                        ['title' => 'Data Cleaning', 'type' => 'text', 'content' => 'Data cleaning involves handling missing values, removing duplicates, fixing inconsistencies, and transforming data into the right format for analysis.'],
+                        ['title' => 'Introduction to Pandas', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/mHDBfY0lJ1o', 'content' => 'Pandas is the primary data manipulation library in Python. It provides DataFrames for tabular data and Series for one-dimensional data.', 'duration_minutes' => 18],
+                        ['title' => 'Data Cleaning', 'type' => 'text', 'content' => "Data Cleaning Techniques\n\n1. Handle Missing Values\n   - Remove rows with missing data\n   - Fill with mean/median/mode\n   - Use forward/backward fill\n\n2. Remove Duplicates\n   - df.drop_duplicates()\n   - df.drop_duplicates(subset=['col1', 'col2'])\n\n3. Fix Data Types\n   - df['col'] = pd.to_numeric(df['col'])\n   - df['date'] = pd.to_datetime(df['date'])\n\n4. Standardize Text\n   - df['name'] = df['name'].str.lower()\n   - df['name'] = df['name'].str.strip()", 'duration_minutes' => 12],
                     ]],
                 ],
             ],
@@ -104,11 +104,11 @@ class DemoDataSeeder extends Seeder
                 'instructor' => 2,
                 'modules' => [
                     ['title' => 'React Native Fundamentals', 'lessons' => [
-                        ['title' => 'What is React Native?', 'type' => 'text', 'content' => 'React Native allows you to build mobile apps using React and JavaScript. It renders native components, providing near-native performance.'],
-                        ['title' => 'Setting Up Your Environment', 'type' => 'text', 'content' => 'Install Node.js, Watchman, and either Xcode (iOS) or Android Studio (Android). Use Expo for easier setup.'],
+                        ['title' => 'What is React Native?', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/0-S5aYVv3aA', 'content' => 'React Native allows you to build mobile apps using React and JavaScript. It renders native components, providing near-native performance.', 'duration_minutes' => 14],
+                        ['title' => 'Setting Up Your Environment', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/Q7fS1RvWQUg', 'content' => 'Install Node.js, Watchman, and either Xcode (iOS) or Android Studio (Android). Use Expo for easier setup.', 'duration_minutes' => 12],
                     ]],
                     ['title' => 'Building Your First App', 'lessons' => [
-                        ['title' => 'Creating a New Project', 'type' => 'text', 'content' => 'Use npx create-expo-app to scaffold a new React Native project with Expo. This sets up the project structure and dependencies.'],
+                        ['title' => 'Creating a New Project', 'type' => 'video', 'video_url' => 'https://www.youtube.com/embed/ZBCUcPbfb3Y', 'content' => 'Use npx create-expo-app to scaffold a new React Native project with Expo. This sets up the project structure and dependencies.', 'duration_minutes' => 16],
                     ]],
                 ],
             ],
