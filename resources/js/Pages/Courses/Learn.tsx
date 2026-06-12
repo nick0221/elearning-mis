@@ -337,7 +337,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             )}
 
                             {/* Inline Quiz Section */}
-                            {course.assessments && course.assessments.length > 0 && activeLesson.lessonCompletions?.length > 0 && !quizSubmitted && (
+                            {course.assessments && course.assessments.length > 0 && !quizSubmitted && (
                                 <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-6">
                                     <h3 className="text-lg font-medium text-foreground flex items-center gap-2"><HelpCircle className="h-5 w-5 text-accent" /> Quick Quiz</h3>
                                     <p className="mt-1 text-sm text-muted-foreground">Test your knowledge with a quick review</p>
