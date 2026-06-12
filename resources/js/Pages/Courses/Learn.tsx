@@ -49,7 +49,18 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
-    const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+    // Find next lesson that is NOT in a locked module
+    let nextLesson = null;
+    for (let i = currentIndex + 1; i < allLessons.length; i++) {
+        const lesson = allLessons[i];
+        const lessonModule = course.modules?.find((m) => (m.lessons || []).some((l) => l.id === lesson.id));
+        const lessonModuleIdx = course.modules?.findIndex((m) => m.id === lessonModule?.id) ?? 0;
+        if (!isModuleLocked(lessonModuleIdx)) {
+            nextLesson = lesson;
+            break;
+        }
+    }
 
     const currentModule = course.modules?.find((m) => (m.lessons || []).some((l) => l.id === activeLesson?.id));
     const currentModuleIdx = course.modules?.findIndex((m) => m.id === currentModule?.id) ?? 0;
