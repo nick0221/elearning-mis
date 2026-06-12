@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,8 +19,11 @@ class MessageController extends Controller
             ->latest()
             ->paginate(15);
 
+        $unreadCount = Message::where('receiver_id', $user->id)->whereNull('read_at')->count();
+
         return Inertia::render('Messages/Index', [
             'inbox' => $inbox,
+            'unreadCount' => $unreadCount,
         ]);
     }
 
@@ -40,12 +44,20 @@ class MessageController extends Controller
         $validated = $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'subject' => 'required|string|max:255',
-            'body' => 'required|string',
+            'body' => 'required|string|max:5000',
         ]);
 
         $validated['sender_id'] = $request->user()->id;
 
         Message::create($validated);
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'message_sent',
+            'subject_type' => Message::class,
+            'subject_id' => null,
+            'properties' => ['receiver_id' => $validated['receiver_id'], 'subject' => $validated['subject']],
+        ]);
 
         return redirect()->route('messages.index')
             ->with('success', 'Message sent.');

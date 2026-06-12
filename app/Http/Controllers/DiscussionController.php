@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Discussion;
 use App\Models\DiscussionReply;
 use App\Models\Course;
@@ -18,10 +19,18 @@ class DiscussionController extends Controller
             $query->where('course_id', $courseId);
         }
 
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('body', 'like', "%{$search}%");
+            });
+        }
+
         $discussions = $query->orderBy('is_pinned', 'desc')->latest()->paginate(15)->withQueryString();
 
         return Inertia::render('Discussions/Index', [
             'discussions' => $discussions,
+            'filters' => $request->only(['search', 'course_id']),
         ]);
     }
 
@@ -39,12 +48,20 @@ class DiscussionController extends Controller
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|string|max:255',
-            'body' => 'required|string',
+            'body' => 'required|string|max:5000',
         ]);
 
         $validated['user_id'] = $request->user()->id;
 
         $discussion = Discussion::create($validated);
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'discussion_created',
+            'subject_type' => Discussion::class,
+            'subject_id' => $discussion->id,
+            'properties' => ['title' => $discussion->title],
+        ]);
 
         return redirect()->route('discussions.show', $discussion)
             ->with('success', 'Discussion created.');
@@ -66,7 +83,7 @@ class DiscussionController extends Controller
         }
 
         $validated = $request->validate([
-            'body' => 'required|string',
+            'body' => 'required|string|max:2000',
             'parent_id' => 'nullable|exists:discussion_replies,id',
         ]);
 
@@ -76,11 +93,27 @@ class DiscussionController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'discussion_replied',
+            'subject_type' => Discussion::class,
+            'subject_id' => $discussion->id,
+            'properties' => ['discussion_title' => $discussion->title],
+        ]);
+
         return back()->with('success', 'Reply posted.');
     }
 
     public function destroy(Discussion $discussion)
     {
+        ActivityLog::create([
+            'user_id' => request()->user()->id,
+            'action' => 'discussion_deleted',
+            'subject_type' => Discussion::class,
+            'subject_id' => $discussion->id,
+            'properties' => ['title' => $discussion->title],
+        ]);
+
         $discussion->delete();
 
         return redirect()->route('discussions.index')
