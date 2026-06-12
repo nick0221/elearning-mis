@@ -80,12 +80,25 @@ class EnrollmentController extends Controller
                 ->with('error', 'You must enroll in this course first.');
         }
 
-        $course->load(['modules.lessons.attachments', 'modules.lessons.lessonCompletions' => function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-        }]);
+        // Load course with lessons and their completions for current user only
+        $course->load(['modules.lessons.attachments']);
+
+        // Load completions separately to ensure proper filtering
+        $lessonIds = $course->modules->flatMap(fn ($m) => $m->lessons->pluck('id'))->toArray();
+        $completions = \App\Models\LessonCompletion::whereIn('lesson_id', $lessonIds)
+            ->where('user_id', $user->id)
+            ->get()
+            ->keyBy('lesson_id');
+
+        // Attach completions to lessons
+        foreach ($course->modules as $module) {
+            foreach ($module->lessons as $lesson) {
+                $lesson->lessonCompletions = $completions->has($lesson->id) ? [$completions->get($lesson->id)] : [];
+            }
+        }
 
         $totalLessons = $course->modules->sum(fn ($m) => $m->lessons->count());
-        $completedLessons = $course->modules->sum(fn ($m) => $m->lessons->filter(fn ($l) => $l->lessonCompletions->isNotEmpty())->count());
+        $completedLessons = $course->modules->sum(fn ($m) => $m->lessons->filter(fn ($l) => ! empty($l->lessonCompletions))->count());
         $progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
 
         // Check if course is completed
