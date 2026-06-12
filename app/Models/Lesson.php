@@ -26,4 +26,9 @@ class Lesson extends Model
     {
         return $this->hasMany(LessonAttachment::class);
     }
+
+    public function lessonCompletions(): HasMany
+    {
+        return $this->hasMany(LessonCompletion::class);
+    }
 }
