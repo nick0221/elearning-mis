@@ -3,9 +3,15 @@
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseReviewController;
 use App\Http\Controllers\LessonController;
+use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('courses', CourseController::class);
+
+// Module management (nested under courses)
+Route::post('courses/{course}/modules', [ModuleController::class, 'store'])->name('courses.modules.store');
+Route::put('modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
+Route::delete('modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
 
 // Lesson management (nested under modules)
 Route::post('modules/{module}/lessons', [LessonController::class, 'store'])->name('modules.lessons.store');

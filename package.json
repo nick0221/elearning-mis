@@ -20,6 +20,10 @@
         "vite": "^6.0.0"
     },
     "dependencies": {
+        "@tiptap/extension-placeholder": "^3.26.1",
+        "@tiptap/pm": "^3.26.1",
+        "@tiptap/react": "^3.26.1",
+        "@tiptap/starter-kit": "^3.26.1",
         "animejs": "^4.4.0",
         "axios": "^1.17.0",
         "lucide-react": "^1.17.0"
