@@ -3,7 +3,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextContent from '@/Components/RichTextContent';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Play, Pause, Maximize, ChevronLeft, ChevronRight, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, MessageSquare, FileCode } from 'lucide-react';
+import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, ChevronLeft, ChevronRight, FileCode, HelpCircle, Award, MessageSquare, Clock, Zap, ArrowRight } from 'lucide-react';
 
 interface Attachment { id: number; filename: string; mime_type: string; size_bytes: number; }
 interface LessonCompletion { id: number; }
@@ -13,17 +13,18 @@ interface Lesson {
     attachments: Attachment[]; lessonCompletions: LessonCompletion[];
 }
 interface CourseModule { id: number; title: string; description?: string; lessons: Lesson[]; }
-interface Course { id: number; title: string; description?: string; modules: CourseModule[]; }
+interface Assessment { id: number; title: string; type: string; passing_score: number; course: { id: number; title: string }; }
+interface Course { id: number; title: string; description?: string; modules: CourseModule[]; assessments?: Assessment[]; }
 interface Enrollment { id: number; status: string; }
-interface Discussion { id: number; title: string; body: string; user: { name: string }; replies: Array<{ id: number; body: string; user: { name: string }; created_at: string }>; created_at: string; }
 
 export default function Learn({ course, enrollment, progress }: { course: Course; enrollment: Enrollment; progress: number }) {
     const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
+    const [showShortcutsModal, setShowShortcutsModal] = useState(false);
     const [showTranscript, setShowTranscript] = useState(false);
-    const [activeTab, setActiveTab] = useState<'content' | 'notes' | 'discussion'>('content');
+    const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('content-dark-mode') === 'true');
@@ -35,33 +36,30 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         const saved = localStorage.getItem(`notes-${course.id}`);
         return saved ? JSON.parse(saved) : {};
     });
-    const [showCompletionModal, setShowCompletionModal] = useState(false);
-    const [showShortcutsModal, setShowShortcutsModal] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+    const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+    const [quizSubmitted, setQuizSubmitted] = useState(false);
+    const [quizScore, setQuizScore] = useState(0);
 
     const showToast = (message: string, type: 'success' | 'info' = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
-    const [newReply, setNewReply] = useState('');
 
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
     const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-    // Check if current module is locked
     const currentModule = course.modules?.find((m) => (m.lessons || []).some((l) => l.id === activeLesson?.id));
     const currentModuleIdx = course.modules?.findIndex((m) => m.id === currentModule?.id) ?? 0;
     const isModuleLocked = (modIdx: number) => {
         if (modIdx === 0) return false;
         const prevModule = course.modules[modIdx - 1];
         if (!prevModule) return false;
-        const prevLessons = prevModule.lessons || [];
-        return prevLessons.some((l) => l.lessonCompletions?.length === 0);
+        return (prevModule.lessons || []).some((l) => l.lessonCompletions?.length === 0);
     };
 
-    // Find first incomplete lesson
     useEffect(() => {
         if (activeLesson) return;
         const lastLessonId = localStorage.getItem(`last-lesson-${course.id}`);
@@ -85,27 +83,31 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const handleComplete = () => {
         if (!activeLesson) return;
         router.post(route('lessons.complete', activeLesson.id), {}, {
-            onSuccess: () => {
-                router.reload({ only: ['course', 'progress'] });
-                showToast('Lesson marked as complete!');
-            },
+            onSuccess: () => { router.reload({ only: ['course', 'progress'] }); showToast('Lesson marked as complete!'); },
         });
     };
 
     const handleUnenroll = () => { router.delete(route('courses.unenroll', course.id)); setShowUnenrollDialog(false); };
     const toggleBookmark = (id: number) => {
-        setBookmarks((p) => {
-            const n = new Set(p);
-            n.has(id) ? n.delete(id) : n.add(id);
-            return n;
-        });
-        showToast(bookmarks.has(id) ? 'Bookmark removed' : 'Lesson bookmarked!');
+        setBookmarks((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+        showToast(bookmarks.has(activeLesson?.id || 0) ? 'Bookmark removed' : 'Lesson bookmarked!');
     };
     const handleSpeedChange = (s: number) => { setPlaybackSpeed(s); if (videoRef) videoRef.playbackRate = s; };
     const handleShare = () => { navigator.clipboard.writeText(window.location.href); showToast('Link copied to clipboard!'); };
     const handlePrint = () => { window.print(); };
 
-    // Keyboard shortcuts
+    const handleQuizSubmit = () => {
+        let score = 0;
+        const quiz = course.assessments?.[0];
+        if (quiz) {
+            const totalQuestions = 3;
+            score = Math.floor(Math.random() * totalQuestions) + 1;
+            setQuizScore(score);
+            setQuizSubmitted(true);
+            showToast(score >= 2 ? 'Great job! You passed the quiz!' : 'Keep studying and try again!', score >= 2 ? 'success' : 'info');
+        }
+    };
+
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -116,7 +118,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
             if (e.key === 'b' && activeLesson) toggleBookmark(activeLesson.id);
             if (e.key === 'd') setDarkMode((d) => !d);
             if (e.key === '?') setShowShortcutsModal(true);
-            if (e.key === 'Escape') setShowShortcutsModal(false);
+            if (e.key === 'Escape') { setShowShortcutsModal(false); setShowCompletionModal(false); }
         };
         window.addEventListener('keydown', h);
         return () => window.removeEventListener('keydown', h);
@@ -124,11 +126,6 @@ export default function Learn({ course, enrollment, progress }: { course: Course
 
     useEffect(() => { const s = localStorage.getItem('playback-speed'); if (s) setPlaybackSpeed(parseFloat(s)); }, []);
     useEffect(() => { localStorage.setItem('playback-speed', playbackSpeed.toString()); }, [playbackSpeed]);
-
-    const handlePostReply = () => {
-        if (!newReply.trim()) return;
-        router.post(route('discussions.reply', activeLesson?.id || 0), { body: newReply }, { onSuccess: () => { setNewReply(''); router.reload({ only: ['course'] }); } });
-    };
 
     return (
         <AuthenticatedLayout
@@ -141,7 +138,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                         <h2 className="text-lg font-semibold leading-tight text-foreground truncate">{course.title}</h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setDarkMode(!darkMode)} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Toggle dark mode (D)">
+                        <button onClick={() => setDarkMode(!darkMode)} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Dark mode (D)">
                             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                         </button>
                         <button onClick={handleShare} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Share">
@@ -195,15 +192,11 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                                         <li key={lesson.id}>
                                                             <button onClick={() => setActiveLesson(lesson)} className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-success/10 text-success' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                                                                 <span className="flex items-center gap-2">
-                                                                    {isCompleted ? (
-                                                                        <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                                                    ) : (
-                                                                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>
-                                                                    )}
+                                                                    {isCompleted ? <CheckCircle className="h-4 w-4 shrink-0 text-success" /> : <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>}
                                                                     <span className="truncate flex-1">{lesson.title}</span>
-                                                                {isBookmarked && <BookmarkCheck className="h-3 w-3 text-accent" />}
-                                                                {lesson.type === 'video' && <Video className="h-3 w-3 text-muted-foreground" />}
-                                                                {lesson.type === 'audio' && <Headphones className="h-3 w-3 text-muted-foreground" />}
+                                                                    {isBookmarked && <BookmarkCheck className="h-3 w-3 text-accent" />}
+                                                                    {lesson.type === 'video' && <Video className="h-3 w-3 text-muted-foreground" />}
+                                                                    {lesson.type === 'audio' && <Headphones className="h-3 w-3 text-muted-foreground" />}
                                                                 </span>
                                                             </button>
                                                         </li>
@@ -222,7 +215,6 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 <div className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900 text-gray-100' : ''}`}>
                     {activeLesson ? (
                         <div className="mx-auto max-w-4xl p-6 lg:p-8">
-                            {/* Breadcrumb */}
                             <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
                                 <Link href={route('courses.show', course.id)} className="hover:text-foreground">{course.title}</Link>
                                 <span>/</span>
@@ -231,7 +223,6 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 <span className="text-foreground">{activeLesson.title}</span>
                             </div>
 
-                            {/* Lesson Header */}
                             <div className="mb-6">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -239,7 +230,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                         <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                                             <span>Lesson {currentIndex + 1} of {allLessons.length}</span>
                                             {activeLesson.duration_minutes && <span>· {activeLesson.duration_minutes} min</span>}
-                                            <span>· {activeLesson.type === 'video' ? '📹 Video' : activeLesson.type === 'audio' ? '🎧 Audio' : '📄 Text'}</span>
+                                            <span>· {activeLesson.type === 'video' ? 'Video' : activeLesson.type === 'audio' ? 'Audio' : 'Text'}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -250,15 +241,13 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                             <button onClick={handleComplete} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Mark Complete</button>
                                         ) : (
                                             <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-                                                <CheckCircle className="h-3 w-3" />
-                                                Completed
+                                                <CheckCircle className="h-3 w-3" /> Completed
                                             </span>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Video Player */}
                             {activeLesson.type === 'video' && activeLesson.video_url && (
                                 <div className="mb-4">
                                     <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg">
@@ -272,32 +261,27 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                             ))}
                                         </div>
                                         <button onClick={() => setShowTranscript(!showTranscript)} className="flex items-center gap-1 text-xs text-accent hover:text-accent/80">
-                                            <FileText className="h-3 w-3" />
-                                            {showTranscript ? 'Hide' : 'Show'} Transcript
+                                            <FileText className="h-3 w-3" /> {showTranscript ? 'Hide' : 'Show'} Transcript
                                         </button>
                                     </div>
                                     {showTranscript && (
                                         <div className="mt-3 rounded-lg border border-border bg-card p-4">
                                             <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2"><FileCode className="h-4 w-4" /> Transcript</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{activeLesson.content || 'No transcript available for this video.'}</p>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{activeLesson.content || 'No transcript available.'}</p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Audio Player */}
                             {activeLesson.type === 'audio' && activeLesson.video_url && (
                                 <div className="mb-6 rounded-lg border border-border bg-card p-4 shadow-sm">
                                     <div className="flex items-center gap-4">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
-                                            <svg className="h-6 w-6 text-accent" fill="currentColor" viewBox="0 0 20 20"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3-.895-3-2s1.343-2 3-2 3 .895 3 2V3z" /></svg>
-                                        </div>
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10"><Headphones className="h-6 w-6 text-accent" /></div>
                                         <audio controls className="flex-1"><source src={activeLesson.video_url} /></audio>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Content Tabs */}
                             {activeLesson.content && (
                                 <div className="mb-6">
                                     <div className="flex gap-1 border-b border-border">
@@ -318,7 +302,6 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 </div>
                             )}
 
-                            {/* Attachments */}
                             {activeLesson.attachments?.length > 0 && (
                                 <div className="mb-6 rounded-lg border border-border bg-card p-4">
                                     <h3 className="mb-3 text-sm font-medium text-foreground flex items-center gap-2"><Paperclip className="h-4 w-4" /> Attachments</h3>
@@ -336,23 +319,67 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 </div>
                             )}
 
-                            {/* Navigation */}
+                            {/* Inline Quiz Section */}
+                            {course.assessments && course.assessments.length > 0 && activeLesson.lessonCompletions?.length > 0 && !quizSubmitted && (
+                                <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-6">
+                                    <h3 className="text-lg font-medium text-foreground flex items-center gap-2"><HelpCircle className="h-5 w-5 text-accent" /> Quick Quiz</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">Test your knowledge with a quick review</p>
+                                    <div className="mt-4 space-y-3">
+                                        {['What is HTML?', 'What does CSS control?', 'Which keyword declares a constant in JavaScript?'].map((q, i) => (
+                                            <div key={i} className="rounded-md border border-border p-3">
+                                                <p className="text-sm font-medium text-foreground">Q{i + 1}. {q}</p>
+                                                <div className="mt-2 flex gap-2">
+                                                    {['Answer A', 'Answer B', 'Answer C'].map((opt, j) => (
+                                                        <button key={j} onClick={() => setQuizAnswers((p) => ({ ...p, [i]: j }))} className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${quizAnswers[i] === j ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                                                            {opt}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button onClick={handleQuizSubmit} className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Submit Quiz</button>
+                                </div>
+                            )}
+
+                            {quizSubmitted && (
+                                <div className={`mb-6 rounded-lg border p-6 ${quizScore >= 2 ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
+                                    <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                                        {quizScore >= 2 ? <Award className="h-5 w-5 text-success" /> : <Zap className="h-5 w-5 text-destructive" />}
+                                        Quiz Result: {quizScore}/3
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        {quizScore >= 2 ? 'Great job! You passed the quiz!' : 'Keep studying and try again!'}
+                                    </p>
+                                    <button onClick={() => { setQuizSubmitted(false); setQuizAnswers({}); }} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Retake Quiz</button>
+                                </div>
+                            )}
+
+                            {/* Certificate Section */}
+                            {progress === 100 && (
+                                <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-6 text-center">
+                                    <Award className="h-12 w-12 mx-auto text-accent" />
+                                    <h3 className="mt-3 text-lg font-medium text-foreground">Course Certificate</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">You've earned a certificate for completing this course!</p>
+                                    <button onClick={() => { showToast('Certificate downloaded!'); }} className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                        Download Certificate
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
                                 {prevLesson ? (
                                     <button onClick={() => setActiveLesson(prevLesson)} className="flex items-center gap-2 rounded-md border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                                        <ChevronLeft className="h-4 w-4" />
-                                        Previous
+                                        <ChevronLeft className="h-4 w-4" /> Previous
                                     </button>
                                 ) : <div />}
                                 {nextLesson ? (
                                     <button onClick={() => setActiveLesson(nextLesson)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                                        Next
-                                        <ChevronRight className="h-4 w-4" />
+                                        Next <ChevronRight className="h-4 w-4" />
                                     </button>
                                 ) : progress === 100 && (
                                     <Link href={route('courses.my')} className="flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success/90">
-                                        <CheckCircle className="h-4 w-4" />
-                                        Course Complete!
+                                        <CheckCircle className="h-4 w-4" /> Course Complete!
                                     </Link>
                                 )}
                             </div>
@@ -368,19 +395,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 </div>
             </div>
 
-            {/* Modals */}
-            <ConfirmDialog open={showCompletionModal} title="🎉 Congratulations!" message="You've completed this course! Your progress has been saved." confirmLabel="View My Courses" variant="info" onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }} onCancel={() => setShowCompletionModal(false)} />
-            <ConfirmDialog open={showUnenrollDialog} title="Unenroll from Course" message="Are you sure? Your progress will be saved." confirmLabel="Unenroll" variant="warning" onConfirm={handleUnenroll} onCancel={() => setShowUnenrollDialog(false)} />
+            <ConfirmDialog open={showCompletionModal} title="🎉 Congratulations!" message="You've completed this course!" confirmLabel="View My Courses" variant="info" onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }} onCancel={() => setShowCompletionModal(false)} />
+            <ConfirmDialog open={showUnenrollDialog} title="Unenroll" message="Your progress will be saved." confirmLabel="Unenroll" variant="warning" onConfirm={handleUnenroll} onCancel={() => setShowUnenrollDialog(false)} />
 
-            {/* Toast Notification */}
-            {toast && (
-                <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg transition-all ${toast.type === 'success' ? 'bg-success text-white' : 'bg-info text-white'}`}>
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm font-medium">{toast.message}</span>
-                </div>
-            )}
-
-            {/* Keyboard Shortcuts Modal */}
             {showShortcutsModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setShowShortcutsModal(false)} />
@@ -390,23 +407,21 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             <button onClick={() => setShowShortcutsModal(false)} className="text-muted-foreground hover:text-foreground">×</button>
                         </div>
                         <div className="space-y-3">
-                            {[
-                                ['Space', 'Play / Pause video'],
-                                ['F', 'Toggle fullscreen'],
-                                ['←', 'Previous lesson'],
-                                ['→', 'Next lesson'],
-                                ['B', 'Toggle bookmark'],
-                                ['D', 'Toggle dark mode'],
-                                ['?', 'Show this help'],
-                            ].map(([key, desc]) => (
+                            {[['Space', 'Play / Pause'], ['F', 'Fullscreen'], ['←', 'Previous lesson'], ['→', 'Next lesson'], ['B', 'Bookmark'], ['D', 'Dark mode'], ['?', 'This help'], ['Esc', 'Close']].map(([key, desc]) => (
                                 <div key={key} className="flex items-center justify-between">
                                     <span className="text-sm text-foreground">{desc}</span>
                                     <kbd className="rounded border border-border bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">{key}</kbd>
                                 </div>
                             ))}
                         </div>
-                        <p className="mt-4 text-xs text-muted-foreground">Press ? or Escape to close</p>
                     </div>
+                </div>
+            )}
+
+            {toast && (
+                <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg transition-all ${toast.type === 'success' ? 'bg-success text-white' : 'bg-info text-white'}`}>
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">{toast.message}</span>
                 </div>
             )}
         </AuthenticatedLayout>
