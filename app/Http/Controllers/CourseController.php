@@ -104,14 +104,22 @@ class CourseController extends Controller
         $this->authorize('view', $course);
 
         $user = request()->user();
-        $course->load(['category', 'instructors', 'modules.lessons', 'enrollments']);
+        $course->load([
+            'category', 'instructors', 'modules.lessons',
+            'enrollments',
+            'reviews' => fn ($q) => $q->with('user')->latest(),
+        ]);
 
         $isEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
+        $userReview = $course->reviews->firstWhere('user_id', $user->id);
 
         return Inertia::render('Courses/Show', [
             'course' => $course,
             'enrollmentCount' => $course->enrollments()->count(),
             'isEnrolled' => $isEnrolled,
+            'userReview' => $userReview,
+            'averageRating' => $course->averageRating(),
+            'ratingsCount' => $course->ratingsCount(),
         ]);
     }
 

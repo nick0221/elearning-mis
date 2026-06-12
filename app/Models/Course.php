@@ -11,7 +11,8 @@ use Illuminate\Support\Str;
 class Course extends Model
 {
     protected $fillable = [
-        'title', 'slug', 'description', 'thumbnail', 'category_id',
+        'title', 'slug', 'description', 'prerequisites', 'learning_outcomes',
+        'target_audience', 'thumbnail', 'category_id',
         'difficulty', 'status', 'max_students', 'estimated_duration_minutes',
     ];
 
@@ -51,6 +52,21 @@ class Course extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'course_id');
+    }
+
+    public function ratingsCount(): int
+    {
+        return $this->reviews()->count();
+    }
+
+    public function averageRating(): ?float
+    {
+        return $this->reviews()->avg('rating');
     }
 
     public function getStatusLabelAttribute(): string

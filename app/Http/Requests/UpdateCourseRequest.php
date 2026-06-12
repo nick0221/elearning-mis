@@ -18,6 +18,9 @@ class UpdateCourseRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
+            'prerequisites' => 'nullable|string|max:2000',
+            'learning_outcomes' => 'nullable|string|max:5000',
+            'target_audience' => 'nullable|string|max:500',
             'category_id' => 'nullable|exists:categories,id',
             'difficulty' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:draft,published,archived',
