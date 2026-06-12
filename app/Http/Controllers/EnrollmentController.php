@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Category;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -58,15 +59,54 @@ class EnrollmentController extends Controller
 
     public function myCourses(Request $request)
     {
-        $enrollments = Enrollment::where('user_id', $request->user()->id)
+        $query = Enrollment::where('user_id', $request->user()->id)
             ->with(['course.category', 'course.modules.lessons.lessonCompletions' => function ($query) use ($request) {
                 $query->where('user_id', $request->user()->id);
-            }])
-            ->latest('enrolled_at')
-            ->paginate(12);
+            }]);
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->whereHas('course.category', fn ($q) => $q->where('name', $request->category));
+        }
+
+        // Search by course title
+        if ($request->filled('search')) {
+            $query->whereHas('course', fn ($q) => $q->where('title', 'like', '%'.$request->search.'%'));
+        }
+
+        // Sort
+        $sort = $request->input('sort', 'recent');
+        match ($sort) {
+            'title' => $query->orderBy(Course::select('title')->whereColumn('id', 'enrollments.course_id')),
+            'oldest' => $query->oldest('enrolled_at'),
+            default => $query->latest('enrolled_at'),
+        };
+
+        $enrollments = $query->paginate(12)->withQueryString();
+
+        // Attach server-calculated progress to each enrollment
+        $enrollments->getCollection()->transform(function ($enrollment) {
+            $lessons = $enrollment->course->modules->flatMap(fn ($m) => $m->lessons);
+            $total = $lessons->count();
+            $enrollment->progress = $total > 0
+                ? round(($lessons->filter(fn ($l) => $l->lessonCompletions->isNotEmpty())->count() / $total) * 100)
+                : 0;
+
+            return $enrollment;
+        });
+
+        $categories = Category::whereHas('courses.enrollments', fn ($q) => $q->where('user_id', $request->user()->id))
+            ->pluck('name');
 
         return Inertia::render('Courses/MyCourses', [
             'enrollments' => $enrollments,
+            'filters' => $request->only(['search', 'status', 'sort', 'category']),
+            'categories' => $categories,
         ]);
     }
 
@@ -138,7 +178,10 @@ class EnrollmentController extends Controller
             'properties' => ['lesson_title' => $lesson->title],
         ]);
 
-        // Redirect to learn page with updated progress
+        if ($request->header('X-Inertia') || $request->wantsJson()) {
+            return response()->json(['message' => 'Lesson marked as complete!']);
+        }
+
         $course = $lesson->module->course;
 
         return redirect()->route('courses.learn', $course)->with('success', 'Lesson marked as complete!');

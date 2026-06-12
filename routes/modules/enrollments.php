@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\EnrollmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -8,3 +9,6 @@ Route::delete('courses/{course}/unenroll', [EnrollmentController::class, 'destro
 Route::get('my-courses', [EnrollmentController::class, 'myCourses'])->name('courses.my');
 Route::get('courses/{course}/learn', [EnrollmentController::class, 'learn'])->name('courses.learn');
 Route::post('lessons/{lesson}/complete', [EnrollmentController::class, 'completeLesson'])->name('lessons.complete');
+
+// Certificate download
+Route::get('courses/{course}/certificate', [CertificateController::class, 'download'])->name('courses.certificate');

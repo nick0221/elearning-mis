@@ -2,10 +2,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextContent from '@/Components/RichTextContent';
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, ChevronLeft, ChevronRight, FileCode, HelpCircle, Award, MessageSquare, Clock, Zap, ArrowRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, ChevronLeft, ChevronRight, FileCode, HelpCircle, Award, MessageSquare, Clock, Zap, ArrowRight, ChevronDown, ChevronUp, Circle, Download, Timer } from 'lucide-react';
 
-interface Attachment { id: number; filename: string; mime_type: string; size_bytes: number; }
+interface Attachment { id: number; filename: string; mime_type: string; size_bytes: number; path?: string; }
 interface LessonCompletion { id: number; }
 interface Lesson {
     id: number; title: string; content?: string; type: string;
@@ -36,10 +36,17 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         const saved = localStorage.getItem(`notes-${course.id}`);
         return saved ? JSON.parse(saved) : {};
     });
+    const [expandedModules, setExpandedModules] = useState<Set<number>>(() => {
+        const saved = localStorage.getItem(`modules-expanded-${course.id}`);
+        return saved ? new Set(JSON.parse(saved)) : new Set(course.modules?.map((m) => m.id) || []);
+    });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
     const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
     const [quizSubmitted, setQuizSubmitted] = useState(false);
     const [quizScore, setQuizScore] = useState(0);
+    const [completingLessonIds, setCompletingLessonIds] = useState<Set<number>>(new Set());
+    const [localCompletedLessonIds, setLocalCompletedLessonIds] = useState<Set<number>>(new Set());
+    const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const showToast = (message: string, type: 'success' | 'info' = 'success') => {
         setToast({ message, type });
@@ -47,6 +54,17 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     };
 
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
+
+    const completedLessonIdSet = new Set<number>([
+        ...allLessons.filter((l) => l.lessonCompletions?.length > 0).map((l) => l.id),
+        ...localCompletedLessonIds,
+    ]);
+
+    const isLessonCompleted = (lesson: Lesson) => completedLessonIdSet.has(lesson.id);
+
+    const completedCount = allLessons.filter((l) => isLessonCompleted(l)).length;
+    const localProgress = allLessons.length > 0 ? Math.round((completedCount / allLessons.length) * 100) : 0;
+
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
 
@@ -57,10 +75,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         if (modIdx === 0) return false;
         const prevModule = course.modules[modIdx - 1];
         if (!prevModule) return false;
-        return (prevModule.lessons || []).some((l) => l.lessonCompletions?.length === 0);
+        return (prevModule.lessons || []).some((l) => !isLessonCompleted(l));
     };
 
-    // Find next lesson that is NOT in a locked module
     let nextLesson = null;
     for (let i = currentIndex + 1; i < allLessons.length; i++) {
         const lesson = allLessons[i];
@@ -72,6 +89,25 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         }
     }
 
+    // Auto-advance timer: after marking complete, go to next lesson
+    const scheduleAutoAdvance = () => {
+        if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+        autoAdvanceTimer.current = setTimeout(() => {
+            if (nextLesson) {
+                setActiveLesson(nextLesson);
+                showToast('Auto-advanced to next lesson');
+            }
+        }, 1500);
+    };
+
+    // Show completion modal when progress hits 100%
+    useEffect(() => {
+        if (localProgress === 100 && completedCount > 0 && !showCompletionModal) {
+            const timer = setTimeout(() => setShowCompletionModal(true), 800);
+            return () => clearTimeout(timer);
+        }
+    }, [localProgress, completedCount]);
+
     useEffect(() => {
         if (activeLesson) return;
         const lastLessonId = localStorage.getItem(`last-lesson-${course.id}`);
@@ -81,7 +117,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         }
         for (const mod of course.modules || []) {
             for (const lesson of mod.lessons || []) {
-                if (lesson.lessonCompletions?.length === 0) { setActiveLesson(lesson); return; }
+                if (!lesson.lessonCompletions?.length) { setActiveLesson(lesson); return; }
             }
         }
         setActiveLesson(course.modules?.[0]?.lessons?.[0] || null);
@@ -91,15 +127,51 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     useEffect(() => { localStorage.setItem(`notes-${course.id}`, JSON.stringify(notes)); }, [notes, course.id]);
     useEffect(() => { localStorage.setItem(`bookmarks-${course.id}`, JSON.stringify([...bookmarks])); }, [bookmarks, course.id]);
     useEffect(() => { localStorage.setItem('content-dark-mode', darkMode.toString()); }, [darkMode]);
+    useEffect(() => { localStorage.setItem(`modules-expanded-${course.id}`, JSON.stringify([...expandedModules])); }, [expandedModules, course.id]);
 
-    const handleComplete = () => {
+    useEffect(() => {
         if (!activeLesson) return;
-        const lessonId = activeLesson.id;
+        if (isLessonCompleted(activeLesson)) return;
+        if (activeLesson.type !== 'text') return;
+
+        const el = document.getElementById('lesson-content');
+        if (!el) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    markComplete(activeLesson.id);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [activeLesson]);
+
+    const handleMediaEnded = () => {
+        if (!activeLesson) return;
+        if (isLessonCompleted(activeLesson)) return;
+        markComplete(activeLesson.id);
+    };
+
+    const markComplete = (lessonId: number) => {
+        if (completingLessonIds.has(lessonId)) return;
+        setCompletingLessonIds((prev) => new Set(prev).add(lessonId));
+        setLocalCompletedLessonIds((prev) => new Set(prev).add(lessonId));
+
+        const isLastLesson = lessonId === allLessons[allLessons.length - 1]?.id;
+        if (!isLastLesson) {
+            scheduleAutoAdvance();
+        }
+
         router.post(route('lessons.complete', lessonId), {}, {
             preserveScroll: true,
-            onSuccess: () => {
-                // Force full page reload to ensure progress updates
-                window.location.reload();
+            preserveState: true,
+            onFinish: () => {
+                setCompletingLessonIds((prev) => { const n = new Set(prev); n.delete(lessonId); return n; });
             },
         });
     };
@@ -109,9 +181,17 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         setBookmarks((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
         showToast(bookmarks.has(activeLesson?.id || 0) ? 'Bookmark removed' : 'Lesson bookmarked!');
     };
+    const toggleModule = (modId: number) => {
+        setExpandedModules((prev) => { const n = new Set(prev); n.has(modId) ? n.delete(modId) : n.add(modId); return n; });
+    };
     const handleSpeedChange = (s: number) => { setPlaybackSpeed(s); if (videoRef) videoRef.playbackRate = s; };
     const handleShare = () => { navigator.clipboard.writeText(window.location.href); showToast('Link copied to clipboard!'); };
     const handlePrint = () => { window.print(); };
+
+    const remainingLessons = allLessons.length - completedCount;
+    const remainingMinutes = allLessons
+        .filter((l) => !isLessonCompleted(l))
+        .reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
 
     const handleQuizSubmit = () => {
         let score = 0;
@@ -133,6 +213,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
             if (e.key === ' ' && activeLesson?.type === 'video' && videoRef) { e.preventDefault(); videoRef.paused ? videoRef.play() : videoRef.pause(); }
             if (e.key === 'f' && videoRef) videoRef.requestFullscreen();
             if (e.key === 'b' && activeLesson) toggleBookmark(activeLesson.id);
+            if (e.key === 'm' && activeLesson && !isLessonCompleted(activeLesson)) markComplete(activeLesson.id);
             if (e.key === 'd') setDarkMode((d) => !d);
             if (e.key === '?') setShowShortcutsModal(true);
             if (e.key === 'Escape') { setShowShortcutsModal(false); setShowCompletionModal(false); }
@@ -175,45 +256,71 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 {/* Sidebar */}
                 <div className={`${sidebarOpen ? 'w-80' : 'w-0'} overflow-hidden border-r border-border bg-card transition-all duration-300 lg:w-80`}>
                     <div className="h-full overflow-y-auto p-4">
+                        {/* Overall Progress */}
                         <div className="mb-4">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Progress</span>
-                                <span className="font-medium text-foreground">{progress}%</span>
+                                <span className="font-medium text-foreground">{localProgress}%</span>
                             </div>
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                                <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${progress}%` }} />
+                                <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${localProgress}%` }} />
                             </div>
-                            {progress === 100 && <p className="mt-2 text-xs font-medium text-success">🎉 Course completed!</p>}
+                            {localProgress === 100 ? (
+                                <p className="mt-2 text-xs font-medium text-success">Course completed!</p>
+                            ) : (
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    {remainingLessons} lesson{remainingLessons !== 1 ? 's' : ''} remaining
+                                    {remainingMinutes > 0 && ` · ${remainingMinutes} min`}
+                                </p>
+                            )}
                         </div>
-                        <div className="space-y-4">
+
+                        {/* Modules */}
+                        <div className="space-y-2">
                             {course.modules.map((mod, modIdx) => {
-                                const completedInModule = (mod.lessons || []).filter((l) => l.lessonCompletions?.length > 0).length;
+                                const completedInModule = (mod.lessons || []).filter((l) => isLessonCompleted(l)).length;
+                                const totalInModule = (mod.lessons || []).length;
                                 const locked = isModuleLocked(modIdx);
+                                const isExpanded = expandedModules.has(mod.id);
                                 return (
-                                    <div key={mod.id} className={locked ? 'opacity-50' : ''}>
-                                        <div className="mb-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                                {locked && <Lock className="h-3 w-3" />}
-                                                Module {modIdx + 1}
-                                            </h3>
-                                            <span className="text-xs text-muted-foreground">{completedInModule}/{(mod.lessons || []).length}</span>
-                                        </div>
-                                        <p className="mb-2 text-xs text-muted-foreground">{mod.title}</p>
-                                        {!locked && (
-                                            <ul className="space-y-0.5">
+                                    <div key={mod.id} className={`rounded-lg border ${locked ? 'border-border/50 opacity-50' : 'border-border'} ${isExpanded ? 'bg-background' : ''}`}>
+                                        <button
+                                            onClick={() => !locked && toggleModule(mod.id)}
+                                            className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors ${locked ? 'cursor-default' : 'hover:bg-muted/50'} ${isExpanded ? 'border-b border-border' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {locked ? <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : (
+                                                    <div className="relative h-4 w-4 shrink-0">
+                                                        <Circle className={`h-4 w-4 ${completedInModule === totalInModule ? 'text-success' : 'text-muted-foreground'}`} />
+                                                        {completedInModule > 0 && (
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-foreground">
+                                                                {completedInModule}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <span className="text-xs font-semibold text-foreground truncate">Module {modIdx + 1}: {mod.title}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="text-xs text-muted-foreground">{completedInModule}/{totalInModule}</span>
+                                                {!locked && (isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />)}
+                                            </div>
+                                        </button>
+                                        {isExpanded && !locked && (
+                                            <ul className="space-y-0.5 p-1">
                                                 {(mod.lessons || []).map((lesson) => {
-                                                    const isCompleted = lesson.lessonCompletions?.length > 0;
+                                                    const isCompleted = isLessonCompleted(lesson);
                                                     const isActive = activeLesson?.id === lesson.id;
                                                     const isBookmarked = bookmarks.has(lesson.id);
                                                     return (
                                                         <li key={lesson.id}>
-                                                            <button onClick={() => setActiveLesson(lesson)} className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-success/10 text-success' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                                            <button onClick={() => setActiveLesson(lesson)} className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'text-success hover:bg-success/10' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                                                                 <span className="flex items-center gap-2">
                                                                     {isCompleted ? <CheckCircle className="h-4 w-4 shrink-0 text-success" /> : <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>}
                                                                     <span className="truncate flex-1">{lesson.title}</span>
-                                                                    {isBookmarked && <BookmarkCheck className="h-3 w-3 text-accent" />}
-                                                                    {lesson.type === 'video' && <Video className="h-3 w-3 text-muted-foreground" />}
-                                                                    {lesson.type === 'audio' && <Headphones className="h-3 w-3 text-muted-foreground" />}
+                                                                    {isBookmarked && <BookmarkCheck className="h-3 w-3 text-accent shrink-0" />}
+                                                                    {lesson.type === 'video' && <Video className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                                                    {lesson.type === 'audio' && <Headphones className="h-3 w-3 text-muted-foreground shrink-0" />}
                                                                 </span>
                                                             </button>
                                                         </li>
@@ -232,6 +339,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 <div className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900 text-gray-100' : ''}`}>
                     {activeLesson ? (
                         <div className="mx-auto max-w-4xl p-6 lg:p-8">
+                            {/* Breadcrumb */}
                             <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
                                 <Link href={route('courses.show', course.id)} className="hover:text-foreground">{course.title}</Link>
                                 <span>/</span>
@@ -240,6 +348,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 <span className="text-foreground">{activeLesson.title}</span>
                             </div>
 
+                            {/* Lesson Header */}
                             <div className="mb-6">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -254,8 +363,10 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                         <button onClick={() => activeLesson && toggleBookmark(activeLesson.id)} className={`rounded-md p-2 transition-colors ${bookmarks.has(activeLesson?.id || 0) ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:bg-muted'}`} title="Bookmark (B)">
                                             {bookmarks.has(activeLesson?.id || 0) ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
                                         </button>
-                                        {activeLesson.lessonCompletions?.length === 0 ? (
-                                            <button onClick={handleComplete} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Mark Complete</button>
+                                        {!isLessonCompleted(activeLesson) ? (
+                                            <button onClick={() => markComplete(activeLesson.id)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90" title="Mark Complete (M)">
+                                                Mark Complete
+                                            </button>
                                         ) : (
                                             <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
                                                 <CheckCircle className="h-3 w-3" /> Completed
@@ -265,10 +376,11 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 </div>
                             </div>
 
+                            {/* Video Content */}
                             {activeLesson.type === 'video' && activeLesson.video_url && (
                                 <div className="mb-4">
                                     <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg">
-                                        <video ref={setVideoRef} src={activeLesson.video_url} className="h-full w-full" controls playbackRate={playbackSpeed} />
+                                        <video ref={setVideoRef} src={activeLesson.video_url} className="h-full w-full" controls playbackRate={playbackSpeed} onEnded={handleMediaEnded} />
                                     </div>
                                     <div className="mt-2 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -290,15 +402,17 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 </div>
                             )}
 
+                            {/* Audio Content */}
                             {activeLesson.type === 'audio' && activeLesson.video_url && (
                                 <div className="mb-6 rounded-lg border border-border bg-card p-4 shadow-sm">
                                     <div className="flex items-center gap-4">
                                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10"><Headphones className="h-6 w-6 text-accent" /></div>
-                                        <audio controls className="flex-1"><source src={activeLesson.video_url} /></audio>
+                                        <audio controls className="flex-1" onEnded={handleMediaEnded}><source src={activeLesson.video_url} /></audio>
                                     </div>
                                 </div>
                             )}
 
+                            {/* Text / Notes Content */}
                             {activeLesson.content && (
                                 <div className="mb-6">
                                     <div className="flex gap-1 border-b border-border">
@@ -306,8 +420,10 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                         <button onClick={() => setActiveTab('notes')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'notes' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Notes {notes[activeLesson.id] && '📝'}</button>
                                     </div>
                                     {activeTab === 'content' && (
-                                        <div className="mt-4 rounded-lg border border-border bg-card p-6">
-                                            <RichTextContent content={activeLesson.content || ''} />
+                                        <div id="lesson-content">
+                                            <div className="mt-4 rounded-lg border border-border bg-card p-6">
+                                                <RichTextContent content={activeLesson.content || ''} />
+                                            </div>
                                         </div>
                                     )}
                                     {activeTab === 'notes' && (
@@ -319,24 +435,28 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 </div>
                             )}
 
+                            {/* Attachments */}
                             {activeLesson.attachments?.length > 0 && (
                                 <div className="mb-6 rounded-lg border border-border bg-card p-4">
-                                    <h3 className="mb-3 text-sm font-medium text-foreground flex items-center gap-2"><Paperclip className="h-4 w-4" /> Attachments</h3>
+                                    <h3 className="mb-3 text-sm font-medium text-foreground flex items-center gap-2"><Paperclip className="h-4 w-4" /> Attachments ({activeLesson.attachments.length})</h3>
                                     <div className="space-y-2">
                                         {activeLesson.attachments.map((att) => (
-                                            <a key={att.id} href={`/storage/${att.path}`} className="flex items-center justify-between rounded-md border border-border p-3 hover:bg-muted transition-colors">
+                                            <a key={att.id} href={`/storage/${att.path}`} className="flex items-center justify-between rounded-md border border-border p-3 hover:bg-muted transition-colors group" target="_blank" rel="noopener noreferrer">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-xs font-medium text-muted-foreground">{att.mime_type.split('/')[1]?.toUpperCase().slice(0, 3)}</div>
-                                                    <span className="text-sm text-foreground">{att.filename}</span>
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-xs font-medium text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent transition-colors">{att.mime_type?.split('/')[1]?.toUpperCase().slice(0, 3) || 'FILE'}</div>
+                                                    <div>
+                                                        <span className="text-sm text-foreground">{att.filename}</span>
+                                                        {att.size_bytes && <span className="ml-2 text-xs text-muted-foreground">({(att.size_bytes / 1024).toFixed(1)} KB)</span>}
+                                                    </div>
                                                 </div>
-                                                <span className="text-xs text-muted-foreground">{(att.size_bytes / 1024).toFixed(1)} KB</span>
+                                                <Download className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
                                             </a>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Inline Quiz Section */}
+                            {/* Inline Quiz */}
                             {course.assessments && course.assessments.length > 0 && !quizSubmitted && (
                                 <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-6">
                                     <h3 className="text-lg font-medium text-foreground flex items-center gap-2"><HelpCircle className="h-5 w-5 text-accent" /> Quick Quiz</h3>
@@ -373,17 +493,18 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             )}
 
                             {/* Certificate Section */}
-                            {progress === 100 && (
+                            {localProgress === 100 && (
                                 <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-6 text-center">
                                     <Award className="h-12 w-12 mx-auto text-accent" />
                                     <h3 className="mt-3 text-lg font-medium text-foreground">Course Certificate</h3>
                                     <p className="mt-1 text-sm text-muted-foreground">You've earned a certificate for completing this course!</p>
-                                    <button onClick={() => { showToast('Certificate downloaded!'); }} className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
-                                        Download Certificate
-                                    </button>
+                                    <a href={route('courses.certificate', course.id)} className="mt-4 inline-block rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                        <Download className="mr-1.5 inline h-4 w-4" /> Download Certificate
+                                    </a>
                                 </div>
                             )}
 
+                            {/* Prev / Next Navigation */}
                             <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
                                 {prevLesson ? (
                                     <button onClick={() => setActiveLesson(prevLesson)} className="flex items-center gap-2 rounded-md border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
@@ -394,7 +515,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     <button onClick={() => setActiveLesson(nextLesson)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                                         Next <ChevronRight className="h-4 w-4" />
                                     </button>
-                                ) : progress === 100 && (
+                                ) : localProgress === 100 && (
                                     <Link href={route('courses.my')} className="flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success/90">
                                         <CheckCircle className="h-4 w-4" /> Course Complete!
                                     </Link>
@@ -412,7 +533,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 </div>
             </div>
 
-            <ConfirmDialog open={showCompletionModal} title="🎉 Congratulations!" message="You've completed this course!" confirmLabel="View My Courses" variant="info" onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }} onCancel={() => setShowCompletionModal(false)} />
+            <ConfirmDialog open={showCompletionModal} title="Congratulations!" message="You've completed this course! Download your certificate or continue to your course list." confirmLabel="View My Courses" variant="info" onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }} onCancel={() => setShowCompletionModal(false)} />
             <ConfirmDialog open={showUnenrollDialog} title="Unenroll" message="Your progress will be saved." confirmLabel="Unenroll" variant="warning" onConfirm={handleUnenroll} onCancel={() => setShowUnenrollDialog(false)} />
 
             {showShortcutsModal && (
@@ -421,13 +542,13 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                     <div className="relative z-50 w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h3>
-                            <button onClick={() => setShowShortcutsModal(false)} className="text-muted-foreground hover:text-foreground">×</button>
+                            <button onClick={() => setShowShortcutsModal(false)} className="text-muted-foreground hover:text-foreground">&times;</button>
                         </div>
                         <div className="space-y-3">
-                            {[['Space', 'Play / Pause'], ['F', 'Fullscreen'], ['←', 'Previous lesson'], ['→', 'Next lesson'], ['B', 'Bookmark'], ['D', 'Dark mode'], ['?', 'This help'], ['Esc', 'Close']].map(([key, desc]) => (
-                                <div key={key} className="flex items-center justify-between">
-                                    <span className="text-sm text-foreground">{desc}</span>
-                                    <kbd className="rounded border border-border bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">{key}</kbd>
+                            {[['Space', 'Play / Pause'], ['F', 'Fullscreen'], ['←', 'Previous lesson'], ['→', 'Next lesson'], ['M', 'Mark complete'], ['B', 'Bookmark'], ['D', 'Dark mode'], ['?', 'This help'], ['Esc', 'Close']].map(([key, desc]) => (
+                                <div key={key as string} className="flex items-center justify-between">
+                                    <span className="text-sm text-foreground">{desc as string}</span>
+                                    <kbd className="rounded border border-border bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">{key as string}</kbd>
                                 </div>
                             ))}
                         </div>

@@ -31,7 +31,7 @@ interface Assessment {
 }
 
 export default function Show({ assessment }: { assessment: Assessment }) {
-    const { canCreateAssessments, canTakeAssessments } = usePermission();
+    const { canCreateAssessments, canTakeAssessments, canGradeSubmissions } = usePermission();
 
     const handleDelete = () => {
         if (confirm('Delete this assessment?')) {
@@ -85,6 +85,7 @@ export default function Show({ assessment }: { assessment: Assessment }) {
                                         <th className="px-4 py-2 text-left text-xs font-medium uppercase text-muted-foreground">Attempt</th>
                                         <th className="px-4 py-2 text-left text-xs font-medium uppercase text-muted-foreground">Score</th>
                                         <th className="px-4 py-2 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>
+                                        {canGradeSubmissions() && <th className="px-4 py-2 text-left text-xs font-medium uppercase text-muted-foreground">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
@@ -94,6 +95,19 @@ export default function Show({ assessment }: { assessment: Assessment }) {
                                             <td className="px-4 py-2 text-sm text-muted-foreground">#{s.attempt_number}</td>
                                             <td className="px-4 py-2 text-sm text-foreground">{s.auto_score ?? '-'}</td>
                                             <td className="px-4 py-2"><span className={`inline-flex rounded-full px-2 text-xs font-semibold ${s.status === 'graded' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>{s.status}</span></td>
+                                            {canGradeSubmissions() && (
+                                                <td className="px-4 py-2">
+                                                    {s.status === 'submitted' ? (
+                                                        <Link href={route('assessments.submissions.grade', [assessment.id, s.id])} className="text-sm font-medium text-primary hover:text-primary/80">
+                                                            Grade
+                                                        </Link>
+                                                    ) : s.status === 'graded' && s.grade ? (
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {s.grade.score}/{s.grade.max_score}
+                                                        </span>
+                                                    ) : null}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

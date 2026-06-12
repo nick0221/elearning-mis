@@ -62,6 +62,35 @@ class DashboardController extends Controller
                 'completedLessons' => LessonCompletion::where('user_id', $user->id)->count(),
             ];
 
+            $enrolled = Enrollment::where('user_id', $user->id)
+                ->with(['course.modules.lessons.lessonCompletions' => function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                }])
+                ->latest('enrolled_at')
+                ->take(6)
+                ->get();
+
+            $data['enrolledCourses'] = $enrolled->map(fn ($e) => [
+                'id' => $e->id,
+                'status' => $e->status,
+                'enrolled_at' => $e->enrolled_at,
+                'completed_at' => $e->completed_at,
+                'course' => [
+                    'id' => $e->course->id,
+                    'title' => $e->course->title,
+                    'slug' => $e->course->slug,
+                    'thumbnail' => $e->course->thumbnail,
+                    'difficulty' => $e->course->difficulty,
+                ],
+                'progress' => (function () use ($e) {
+                    $lessons = $e->course->modules->flatMap(fn ($m) => $m->lessons);
+                    $total = $lessons->count();
+                    $completed = $lessons->filter(fn ($l) => $l->lessonCompletions->isNotEmpty())->count();
+
+                    return $total > 0 ? round(($completed / $total) * 100) : 0;
+                })(),
+            ]);
+
             $data['recentCompletions'] = LessonCompletion::where('user_id', $user->id)
                 ->with(['lesson.module.course'])
                 ->latest()

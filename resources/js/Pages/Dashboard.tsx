@@ -25,13 +25,29 @@ interface Completion {
     created_at: string;
 }
 
+interface EnrolledCourse {
+    id: number;
+    status: string;
+    enrolled_at: string;
+    completed_at?: string;
+    course: {
+        id: number;
+        title: string;
+        slug: string;
+        thumbnail?: string;
+        difficulty: string;
+    };
+    progress: number;
+}
+
 export default function Dashboard({
-    stats, recentEnrollments, recentCompletions, courses,
+    stats, recentEnrollments, recentCompletions, courses, enrolledCourses,
 }: {
     stats?: Record<string, number>;
     recentEnrollments?: Enrollment[];
     recentCompletions?: Completion[];
     courses?: CourseStat[];
+    enrolledCourses?: EnrolledCourse[];
 }) {
     const { user } = usePage().props.auth;
     const { isSuperAdmin, isInstructor, isStudent } = usePermission();
@@ -183,6 +199,65 @@ export default function Dashboard({
                                         <span className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString()}</span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Student: Enrolled Courses */}
+                    {isStudent() && enrolledCourses && enrolledCourses.length > 0 && (
+                        <div className="rounded-lg border border-border bg-card p-6">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-lg font-medium text-foreground">Continue Learning</h3>
+                                <Link href={route('courses.my')} className="text-sm text-accent hover:text-accent/80">View All</Link>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {enrolledCourses.map((ec) => {
+                                    const isCompleted = ec.status === 'completed';
+                                    return (
+                                        <Link
+                                            key={ec.id}
+                                            href={route('courses.learn', ec.course.id)}
+                                            className="group block overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all hover:shadow-md hover:border-accent/50"
+                                        >
+                                            {ec.course.thumbnail ? (
+                                                <img src={ec.course.thumbnail} alt={ec.course.title} className="h-32 w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-32 w-full items-center justify-center bg-muted text-xl font-bold text-muted-foreground">
+                                                    {ec.course.title.charAt(0)}
+                                                </div>
+                                            )}
+                                            <div className="p-4">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                                        isCompleted ? 'bg-success/10 text-success' : 'bg-info/10 text-info'
+                                                    }`}>
+                                                        {ec.status}
+                                                    </span>
+                                                    <span className="inline-flex rounded-full bg-muted px-2 text-xs font-semibold text-muted-foreground capitalize">
+                                                        {ec.course.difficulty}
+                                                    </span>
+                                                </div>
+                                                <h4 className="font-medium text-foreground group-hover:text-accent transition-colors truncate">
+                                                    {ec.course.title}
+                                                </h4>
+                                                <div className="mt-3">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="text-muted-foreground">Progress</span>
+                                                        <span className="font-medium text-foreground">{ec.progress}%</span>
+                                                    </div>
+                                                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                                                        <div
+                                                            className={`h-full rounded-full transition-all duration-500 ${
+                                                                ec.progress === 100 ? 'bg-success' : 'bg-accent'
+                                                            }`}
+                                                            style={{ width: `${ec.progress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
