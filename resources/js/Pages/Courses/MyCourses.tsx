@@ -48,9 +48,9 @@ interface PaginatedData {
 
 export default function MyCourses({ enrollments }: { enrollments: PaginatedData }) {
     const calculateProgress = (course: Course): number => {
-        const totalLessons = course.modules?.reduce((acc, mod) => acc + mod.lessons.length, 0) || 0;
+        const totalLessons = course.modules?.reduce((acc, mod) => acc + (mod.lessons?.length || 0), 0) || 0;
         const completedLessons = course.modules?.reduce(
-            (acc, mod) => acc + mod.lessons.filter((l) => l.lessonCompletions?.length > 0).length,
+            (acc, mod) => acc + (mod.lessons || []).filter((l) => l.lessonCompletions?.length > 0).length,
             0
         ) || 0;
         return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;

@@ -48,8 +48,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     // Find first incomplete lesson, or start from the beginning
     const getInitialLesson = (): Lesson | null => {
         for (const mod of course.modules || []) {
-            for (const lesson of mod.lessons) {
-                if (lesson.lessonCompletions.length === 0) {
+            for (const lesson of mod.lessons || []) {
+                if (lesson.lessonCompletions?.length === 0) {
                     return lesson;
                 }
             }
@@ -62,7 +62,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
 
     // Get all lessons in order for navigation
-    const allLessons = course.modules?.flatMap((mod) => mod.lessons) || [];
+    const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
     const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
@@ -83,7 +83,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
 
     // Auto-navigate to next lesson after completion
     useEffect(() => {
-        if (nextLesson && activeLesson?.lessonCompletions.length > 0) {
+        if (nextLesson && activeLesson?.lessonCompletions?.length > 0) {
             // Could auto-advance here if desired
         }
     }, [activeLesson]);
@@ -134,7 +134,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                         {/* Modules & Lessons */}
                         <div className="space-y-4">
                             {course.modules.map((mod, modIdx) => {
-                                const completedInModule = mod.lessons.filter((l) => l.lessonCompletions.length > 0).length;
+                                const completedInModule = (mod.lessons || []).filter((l) => l.lessonCompletions?.length > 0).length;
                                 return (
                                     <div key={mod.id}>
                                         <div className="mb-2 flex items-center justify-between">
@@ -147,8 +147,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                         </div>
                                         <p className="mb-2 text-xs text-muted-foreground">{mod.title}</p>
                                         <ul className="space-y-0.5">
-                                            {mod.lessons.map((lesson) => {
-                                                const isCompleted = lesson.lessonCompletions.length > 0;
+                                            {(mod.lessons || []).map((lesson) => {
+                                                const isCompleted = lesson.lessonCompletions?.length > 0;
                                                 const isActive = activeLesson?.id === lesson.id;
                                                 return (
                                                     <li key={lesson.id}>
@@ -203,7 +203,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                         {activeLesson.duration_minutes && (
                                             <span className="text-sm text-muted-foreground">{activeLesson.duration_minutes} min</span>
                                         )}
-                                        {activeLesson.lessonCompletions.length === 0 ? (
+                                        {activeLesson.lessonCompletions?.length === 0 ? (
                                             <button
                                                 onClick={handleComplete}
                                                 className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
