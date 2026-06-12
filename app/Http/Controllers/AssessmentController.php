@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAssessmentRequest;
+use App\Models\ActivityLog;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\Question;
@@ -30,6 +32,8 @@ class AssessmentController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('create', Assessment::class);
+
         $courses = Course::orderBy('title')->get();
 
         return Inertia::render('Assessments/Create', [
@@ -38,19 +42,19 @@ class AssessmentController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAssessmentRequest $request)
     {
-        $validated = $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'title' => 'required|string|max:255',
-            'type' => 'required|in:quiz,assignment',
-            'max_attempts' => 'required|integer|min:1',
-            'time_limit_minutes' => 'nullable|integer|min:1',
-            'passing_score' => 'required|integer|min:0|max:100',
-            'is_randomized' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $assessment = Assessment::create($validated);
+
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'assessment_created',
+            'subject_type' => Assessment::class,
+            'subject_id' => $assessment->id,
+            'properties' => ['title' => $assessment->title, 'type' => $assessment->type],
+        ]);
 
         return redirect()->route('assessments.edit', $assessment)
             ->with('success', 'Assessment created. Now add questions.');
@@ -67,6 +71,8 @@ class AssessmentController extends Controller
 
     public function edit(Assessment $assessment)
     {
+        $this->authorize('update', $assessment);
+
         $assessment->load(['course', 'questions.options']);
 
         return Inertia::render('Assessments/Edit', [
@@ -87,11 +93,29 @@ class AssessmentController extends Controller
 
         $assessment->update($validated);
 
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'assessment_updated',
+            'subject_type' => Assessment::class,
+            'subject_id' => $assessment->id,
+            'properties' => ['title' => $assessment->title],
+        ]);
+
         return back()->with('success', 'Assessment updated.');
     }
 
     public function destroy(Assessment $assessment)
     {
+        $this->authorize('delete', $assessment);
+
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'assessment_deleted',
+            'subject_type' => Assessment::class,
+            'subject_id' => $assessment->id,
+            'properties' => ['title' => $assessment->title],
+        ]);
+
         $assessment->delete();
 
         return redirect()->route('assessments.index')
@@ -127,6 +151,14 @@ class AssessmentController extends Controller
                 ]);
             }
         }
+
+        ActivityLog::create([
+            'user_id' => $this->userId(),
+            'action' => 'question_added',
+            'subject_type' => Assessment::class,
+            'subject_id' => $assessment->id,
+            'properties' => ['question_body' => $validated['body'], 'type' => $validated['type']],
+        ]);
 
         return back()->with('success', 'Question added.');
     }
@@ -197,6 +229,14 @@ class AssessmentController extends Controller
         ]);
 
         $passed = $totalPoints > 0 && ($autoScore / $totalPoints * 100) >= $assessment->passing_score;
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'assessment_submitted',
+            'subject_type' => Assessment::class,
+            'subject_id' => $assessment->id,
+            'properties' => ['score' => $autoScore, 'total' => $totalPoints, 'passed' => $passed],
+        ]);
 
         return Inertia::render('Assessments/Result', [
             'assessment' => $assessment,

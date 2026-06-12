@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Head, useForm } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
@@ -30,9 +31,11 @@ interface Submission {
 export default function Take({ assessment, submission }: { assessment: Assessment; submission: Submission }) {
     const [current, setCurrent] = useState(0);
     const [answers, setAnswers] = useState<Record<number, { selected_option_id?: number; text_answer?: string }>>({});
+    const [flagged, setFlagged] = useState<Set<number>>(new Set());
     const [timeLeft, setTimeLeft] = useState<number | null>(
         assessment.time_limit_minutes ? assessment.time_limit_minutes * 60 : null
     );
+    const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
     const { post, processing } = useForm({
         submission_id: submission.id,
@@ -50,9 +53,22 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
     }, [timeLeft]);
 
     const question = assessment.questions[current];
+    const answeredCount = Object.keys(answers).length;
 
     const setAnswer = (questionId: number, value: { selected_option_id?: number; text_answer?: string }) => {
         setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    };
+
+    const toggleFlag = (questionId: number) => {
+        setFlagged((prev) => {
+            const next = new Set(prev);
+            if (next.has(questionId)) {
+                next.delete(questionId);
+            } else {
+                next.add(questionId);
+            }
+            return next;
+        });
     };
 
     const handleSubmit = () => {
@@ -69,26 +85,89 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
         <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold leading-tight text-foreground">{assessment.title}</h2>
-                    {timeLeft !== null && (
-                        <span className={`rounded-md px-3 py-1 text-sm font-mono ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-foreground'}`}>
-                            {formatTime(timeLeft)}
+                    <h2 className="text-lg font-semibold leading-tight text-foreground truncate">{assessment.title}</h2>
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">
+                            {answeredCount}/{assessment.questions.length} answered
                         </span>
-                    )}
+                        {timeLeft !== null && (
+                            <span className={`rounded-md px-3 py-1 text-sm font-mono ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-foreground'}`}>
+                                {formatTime(timeLeft)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             }
         >
             <Head title={`Take: ${assessment.title}`} />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
-                    <div className="bg-card shadow-sm sm:rounded-lg p-6">
+            <div className="flex h-[calc(100vh-4rem)]">
+                {/* Question Navigation Sidebar */}
+                <div className="w-64 overflow-y-auto border-r border-border bg-card p-4 hidden lg:block">
+                    <h3 className="mb-3 text-sm font-medium text-foreground">Questions</h3>
+                    <div className="grid grid-cols-5 gap-1.5">
+                        {assessment.questions.map((q, idx) => {
+                            const isAnswered = answers[q.id] !== undefined;
+                            const isFlagged = flagged.has(q.id);
+                            const isCurrent = idx === current;
+                            return (
+                                <button
+                                    key={q.id}
+                                    onClick={() => setCurrent(idx)}
+                                    className={`relative h-9 w-full rounded text-xs font-medium transition-colors ${
+                                        isCurrent
+                                            ? 'bg-primary text-primary-foreground'
+                                            : isAnswered
+                                            ? 'bg-success/10 text-success'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                                >
+                                    {idx + 1}
+                                    {isFlagged && (
+                                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-warning" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded bg-primary" /> Current
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded bg-success/10" /> Answered
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded bg-muted" /> Unanswered
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-warning" /> Flagged
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Question Area */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="mx-auto max-w-2xl p-6 lg:p-8">
                         <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
                             <span>Question {current + 1} of {assessment.questions.length}</span>
-                            <span>{question.points} pts</span>
+                            <div className="flex items-center gap-3">
+                                <span>{question.points} pts</span>
+                                <button
+                                    onClick={() => toggleFlag(question.id)}
+                                    className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                                        flagged.has(question.id) ? 'bg-warning/10 text-warning' : 'hover:bg-muted'
+                                    }`}
+                                >
+                                    <svg className="h-3 w-3" fill={flagged.has(question.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                                    </svg>
+                                    Flag
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="mb-6 h-2 rounded-full bg-muted">
+                        <div className="mb-6 h-1.5 rounded-full bg-muted">
                             <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((current + 1) / assessment.questions.length) * 100}%` }} />
                         </div>
 
@@ -117,20 +196,39 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
                         )}
 
                         {question.type === 'fill_blank' && (
-                            <input type="text" value={answers[question.id]?.text_answer || ''} onChange={(e) => setAnswer(question.id, { text_answer: e.target.value })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring" placeholder="Your answer" />
+                            <input type="text" value={answers[question.id]?.text_answer || ''} onChange={(e) => setAnswer(question.id, { text_answer: e.target.value })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Your answer" />
                         )}
 
+                        {/* Navigation */}
                         <div className="mt-8 flex items-center justify-between">
-                            <button onClick={() => setCurrent(Math.max(0, current - 1))} disabled={current === 0} className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50">Previous</button>
+                            <button onClick={() => setCurrent(Math.max(0, current - 1))} disabled={current === 0} className="flex items-center gap-1 rounded-md border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                                Previous
+                            </button>
                             {current < assessment.questions.length - 1 ? (
-                                <button onClick={() => setCurrent(current + 1)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Next</button>
+                                <button onClick={() => setCurrent(current + 1)} className="flex items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                                    Next
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                </button>
                             ) : (
-                                <button onClick={handleSubmit} disabled={processing} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">Submit</button>
+                                <button onClick={() => setShowSubmitDialog(true)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                    Submit Assessment
+                                </button>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={showSubmitDialog}
+                title="Submit Assessment"
+                message={`You have answered ${answeredCount} of ${assessment.questions.length} questions. Are you sure you want to submit?`}
+                confirmLabel="Submit"
+                variant="info"
+                onConfirm={handleSubmit}
+                onCancel={() => setShowSubmitDialog(false)}
+            />
         </AuthenticatedLayout>
     );
 }
