@@ -54,6 +54,28 @@ export default function Dashboard({
 
     const role = user?.roles?.[0];
 
+    function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: number; label: string; color: string }) {
+        const colorMap: Record<string, { bg: string; icon: string; text: string }> = {
+            primary: { bg: 'bg-primary/10', icon: 'text-primary', text: 'text-foreground' },
+            accent: { bg: 'bg-accent/10', icon: 'text-accent', text: 'text-foreground' },
+            info: { bg: 'bg-info/10', icon: 'text-info', text: 'text-foreground' },
+            success: { bg: 'bg-success/10', icon: 'text-success', text: 'text-foreground' },
+            warning: { bg: 'bg-warning/10', icon: 'text-warning', text: 'text-foreground' },
+        };
+        const c = colorMap[color] ?? colorMap.primary;
+        return (
+            <div className="rounded-lg border border-border bg-card p-6 transition-all hover:shadow-md">
+                <div className="flex items-center justify-between">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${c.bg} ${c.icon}`}>
+                        {icon}
+                    </div>
+                </div>
+                <div className="mt-3 text-3xl font-bold text-foreground">{value}</div>
+                <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+            </div>
+        );
+    }
+
     return (
         <AuthenticatedLayout
             header={<h2 className="text-xl font-semibold leading-tight text-foreground">Dashboard</h2>}
@@ -63,19 +85,18 @@ export default function Dashboard({
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
                     {/* Welcome Card */}
-                    <div className="rounded-lg border border-border bg-card p-6">
+                    <div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
                         <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-xl font-bold">
                                 {user?.name?.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                                <h3 className="text-lg font-medium text-foreground">Welcome back, {user?.name}!</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                        {role || 'No role'}
-                                    </span>
-                                </p>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-semibold">Welcome back, {user?.name}!</h3>
+                                <p className="mt-0.5 text-primary-foreground/70 text-sm">Here's what's happening today</p>
                             </div>
+                            <span className="hidden rounded-full bg-white/20 px-3 py-1 text-xs font-medium capitalize sm:inline-block">
+                                {role || 'No role'}
+                            </span>
                         </div>
                     </div>
 
@@ -113,34 +134,46 @@ export default function Dashboard({
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             {isInstructor() && (
                                 <>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.totalCourses ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">My Courses</div>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.totalEnrollments ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">Total Enrollments</div>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.totalAssessments ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">Assessments</div>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.totalCompletions ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">Lessons Completed</div>
-                                    </div>
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
+                                        value={stats.totalCourses ?? 0}
+                                        label="My Courses"
+                                        color="primary"
+                                    />
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
+                                        value={stats.totalEnrollments ?? 0}
+                                        label="Total Enrollments"
+                                        color="accent"
+                                    />
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                                        value={stats.totalAssessments ?? 0}
+                                        label="Assessments"
+                                        color="info"
+                                    />
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>}
+                                        value={stats.totalCompletions ?? 0}
+                                        label="Lessons Completed"
+                                        color="success"
+                                    />
                                 </>
                             )}
                             {isStudent() && (
                                 <>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.enrolledCourses ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">Enrolled Courses</div>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-card p-6">
-                                        <div className="text-3xl font-bold text-foreground">{stats.completedLessons ?? 0}</div>
-                                        <div className="mt-1 text-sm text-muted-foreground">Lessons Completed</div>
-                                    </div>
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
+                                        value={stats.enrolledCourses ?? 0}
+                                        label="Enrolled Courses"
+                                        color="accent"
+                                    />
+                                    <StatCard
+                                        icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>}
+                                        value={stats.completedLessons ?? 0}
+                                        label="Lessons Completed"
+                                        color="success"
+                                    />
                                 </>
                             )}
                         </div>
