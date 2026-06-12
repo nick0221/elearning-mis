@@ -2,6 +2,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextEditor from '@/Components/RichTextEditor';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 
 interface Category {
@@ -40,6 +43,210 @@ interface Course {
     modules: CourseModule[];
 }
 
+function SortableModule({
+    mod, idx, courseId, isEditing, onEdit, onSave, onCancel, onAddLesson, onDelete,
+    lessons,
+}: {
+    mod: CourseModule;
+    idx: number;
+    courseId: number;
+    isEditing: boolean;
+    onEdit: (m: CourseModule) => void;
+    onSave: () => void;
+    onCancel: () => void;
+    onAddLesson: (moduleId: number) => void;
+    onDelete: (id: number) => void;
+    lessons: React.ReactNode;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `module-${mod.id}` });
+    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+
+    const [editTitle, setEditTitle] = useState(mod.title);
+    const [editDesc, setEditDesc] = useState(mod.description || '');
+
+    return (
+        <div ref={setNodeRef} style={style} className="rounded-lg border border-border">
+            {isEditing ? (
+                <div className="border-b border-border bg-muted/50 p-4">
+                    <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="mb-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        autoFocus
+                    />
+                    <input
+                        type="text"
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        placeholder="Description (optional)"
+                        className="mb-3 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => { setEditTitle(mod.title); setEditDesc(mod.description || ''); onCancel(); }} className="rounded-md border border-input bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted">
+                            Cancel
+                        </button>
+                        <button onClick={() => { mod.title = editTitle; mod.description = editDesc; onSave(); }} className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between bg-muted/50 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground" title="Drag to reorder">
+                            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M7 2a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zM7 5a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zM7 8a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
+                        </button>
+                        <span className="text-sm font-medium text-foreground">{mod.title}</span>
+                        {mod.description && (
+                            <span className="hidden text-xs text-muted-foreground sm:inline">· {mod.description}</span>
+                        )}
+                        <span className="text-xs text-muted-foreground">({mod.lessons.length} lessons)</span>
+                    </div>
+                    <div className="flex gap-1">
+                        <button onClick={() => { setEditTitle(mod.title); setEditDesc(mod.description || ''); onEdit(mod); }} className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-background hover:text-foreground">
+                            Edit
+                        </button>
+                        <button onClick={() => onAddLesson(mod.id)} className="rounded px-2 py-1 text-xs text-accent hover:bg-background">
+                            + Lesson
+                        </button>
+                        <button onClick={() => onDelete(mod.id)} className="rounded px-2 py-1 text-xs text-destructive hover:bg-background">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            )}
+            {lessons}
+        </div>
+    );
+}
+
+function SortableLessonItem({
+    lesson, moduleId, courseId, isEditing, onEdit, onSave, onCancel, onDelete,
+}: {
+    lesson: Lesson;
+    moduleId: number;
+    courseId: number;
+    isEditing: boolean;
+    onEdit: (moduleId: number, lesson: Lesson) => void;
+    onSave: () => void;
+    onCancel: () => void;
+    onDelete: (id: number) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `lesson-${lesson.id}` });
+    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+
+    const [editTitle, setEditTitle] = useState(lesson.title);
+    const [editType, setEditType] = useState(lesson.type);
+    const [editContent, setEditContent] = useState(lesson.content || '');
+    const [editVideoUrl, setEditVideoUrl] = useState(lesson.video_url || '');
+    const [editDuration, setEditDuration] = useState(lesson.duration_minutes?.toString() || '');
+
+    return (
+        <div ref={setNodeRef} style={style}>
+            {isEditing ? (
+                <div className="border-t border-border p-4">
+                    <div className="mb-3 grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                            <label className="mb-1 block text-xs font-medium text-foreground">Title</label>
+                            <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-foreground">Type</label>
+                            <select
+                                value={editType}
+                                onChange={(e) => setEditType(e.target.value)}
+                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            >
+                                <option value="text">Text</option>
+                                <option value="video">Video</option>
+                                <option value="audio">Audio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {editType === 'video' && (
+                        <div className="mb-3">
+                            <label className="mb-1 block text-xs font-medium text-foreground">Video URL</label>
+                            <input
+                                type="text"
+                                value={editVideoUrl}
+                                onChange={(e) => setEditVideoUrl(e.target.value)}
+                                placeholder="https://example.com/video.mp4"
+                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+                    )}
+
+                    {editType === 'text' && (
+                        <div className="mb-3">
+                            <label className="mb-1 block text-xs font-medium text-foreground">Content</label>
+                            <RichTextEditor
+                                content={editContent}
+                                onChange={(html) => setEditContent(html)}
+                                placeholder="Write your lesson content here..."
+                            />
+                        </div>
+                    )}
+
+                    <div className="mb-3">
+                        <label className="mb-1 block text-xs font-medium text-foreground">Duration (minutes)</label>
+                        <input
+                            type="number"
+                            value={editDuration}
+                            onChange={(e) => setEditDuration(e.target.value)}
+                            min="1"
+                            className="block w-32 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => { setEditTitle(lesson.title); setEditType(lesson.type); setEditContent(lesson.content || ''); setEditVideoUrl(lesson.video_url || ''); setEditDuration(lesson.duration_minutes?.toString() || ''); onCancel(); }} className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted">
+                            Cancel
+                        </button>
+                        <button onClick={() => {
+                            lesson.title = editTitle;
+                            lesson.type = editType;
+                            lesson.content = editContent;
+                            lesson.video_url = editVideoUrl;
+                            lesson.duration_minutes = parseInt(editDuration) || 0;
+                            onSave();
+                        }} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                            Save Lesson
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between border-t border-border px-4 py-2">
+                    <div className="flex items-center gap-2">
+                        <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground" title="Drag to reorder">
+                            <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M7 2a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zM7 5a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zM7 8a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
+                        </button>
+                        <span className="text-sm text-foreground">{lesson.title}</span>
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground capitalize">{lesson.type}</span>
+                        {lesson.duration_minutes && (
+                            <span className="text-xs text-muted-foreground">{lesson.duration_minutes}m</span>
+                        )}
+                    </div>
+                    <div className="flex gap-1">
+                        <button onClick={() => { setEditTitle(lesson.title); setEditType(lesson.type); setEditContent(lesson.content || ''); setEditVideoUrl(lesson.video_url || ''); setEditDuration(lesson.duration_minutes?.toString() || ''); onEdit(moduleId, lesson); }} className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+                            Edit
+                        </button>
+                        <button onClick={() => onDelete(lesson.id)} className="rounded px-2 py-1 text-xs text-destructive hover:bg-muted">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Edit({ course, categories }: { course: Course; categories: Category[] }) {
     const { data, setData, put, processing, errors } = useForm({
         title: course.title,
@@ -51,12 +258,18 @@ export default function Edit({ course, categories }: { course: Course; categorie
         estimated_duration_minutes: course.estimated_duration_minutes?.toString() || '',
     });
 
-    const [editingModule, setEditingModule] = useState<Partial<CourseModule> | null>(null);
-    const [editingLesson, setEditingLesson] = useState<{ moduleId: number; lesson: Partial<Lesson> } | null>(null);
+    const [editingModuleId, setEditingModuleId] = useState<number | null>(null);
+    const [editingLessonKey, setEditingLessonKey] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'module' | 'lesson'; id: number } | null>(null);
     const [showNewModule, setShowNewModule] = useState(false);
     const [newModuleTitle, setNewModuleTitle] = useState('');
     const [newModuleDesc, setNewModuleDesc] = useState('');
+    const [moduleIds, setModuleIds] = useState<number[]>(course.modules.map((m) => m.id));
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
 
     const inputClass = 'mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring';
 
@@ -81,18 +294,6 @@ export default function Edit({ course, categories }: { course: Course; categorie
         });
     };
 
-    const saveModule = () => {
-        if (!editingModule?.id || !editingModule?.title?.trim()) return;
-        router.put(route('modules.update', editingModule.id), {
-            title: editingModule.title,
-            description: editingModule.description,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => setEditingModule(null),
-        });
-    };
-
     const createLesson = (moduleId: number) => {
         router.post(route('modules.lessons.store', moduleId), {
             title: 'New Lesson',
@@ -104,9 +305,20 @@ export default function Edit({ course, categories }: { course: Course; categorie
         });
     };
 
-    const saveLesson = () => {
-        if (!editingLesson?.lesson?.id || !editingLesson?.lesson?.title?.trim()) return;
-        const { moduleId, lesson } = editingLesson;
+    const handleSaveModule = (mod: CourseModule) => {
+        if (!mod.title.trim()) return;
+        router.put(route('modules.update', mod.id), {
+            title: mod.title,
+            description: mod.description,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => setEditingModuleId(null),
+        });
+    };
+
+    const handleSaveLesson = (lesson: Lesson) => {
+        if (!lesson.title.trim()) return;
         router.put(route('lessons.update', lesson.id), {
             title: lesson.title,
             type: lesson.type || 'text',
@@ -116,8 +328,39 @@ export default function Edit({ course, categories }: { course: Course; categorie
         }, {
             preserveState: true,
             preserveScroll: true,
-            onSuccess: () => setEditingLesson(null),
+            onSuccess: () => setEditingLessonKey(null),
         });
+    };
+
+    const handleModuleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = moduleIds.indexOf(Number(active.id.toString().replace('module-', '')));
+        const newIndex = moduleIds.indexOf(Number(over.id.toString().replace('module-', '')));
+        const newOrder = arrayMove(moduleIds, oldIndex, newIndex);
+        setModuleIds(newOrder);
+
+        router.put(route('courses.modules.reorder', course.id), {
+            modules: newOrder.map((id, i) => ({ id, sort_order: i })),
+        }, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleLessonDragEnd = (event: DragEndEvent, moduleId: number) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const mod = course.modules.find((m) => m.id === moduleId);
+        if (!mod) return;
+
+        const lessonIds = mod.lessons.map((l) => l.id);
+        const oldIndex = lessonIds.indexOf(Number(active.id.toString().replace('lesson-', '')));
+        const newIndex = lessonIds.indexOf(Number(over.id.toString().replace('lesson-', '')));
+        const newOrder = arrayMove(lessonIds, oldIndex, newIndex);
+
+        router.put(route('modules.lessons.reorder', moduleId), {
+            lessons: newOrder.map((id, i) => ({ id, sort_order: i })),
+        }, { preserveState: true, preserveScroll: true });
     };
 
     const confirmDelete = () => {
@@ -135,6 +378,8 @@ export default function Edit({ course, categories }: { course: Course; categorie
         }
         setDeleteConfirm(null);
     };
+
+    const sortedModules = [...course.modules].sort((a, b) => moduleIds.indexOf(a.id) - moduleIds.indexOf(b.id));
 
     return (
         <AuthenticatedLayout
@@ -258,169 +503,60 @@ export default function Edit({ course, categories }: { course: Course; categorie
                                     <p className="text-sm text-muted-foreground">No modules yet. Create your first module to start building your course.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {course.modules.map((mod) => (
-                                        <div key={mod.id} className="rounded-lg border border-border">
-                                            {/* Module Header */}
-                                            {editingModule?.id === mod.id ? (
-                                                <div className="border-b border-border bg-muted/50 p-4">
-                                                    <input
-                                                        type="text"
-                                                        value={editingModule.title}
-                                                        onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
-                                                        className="mb-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                        autoFocus
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={editingModule.description || ''}
-                                                        onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
-                                                        placeholder="Description (optional)"
-                                                        className="mb-3 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => setEditingModule(null)} className="rounded-md border border-input bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted">
-                                                            Cancel
-                                                        </button>
-                                                        <button onClick={saveModule} className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                                                            Save
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-between bg-muted/50 px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium text-foreground">{mod.title}</span>
-                                                        {mod.description && (
-                                                            <span className="hidden text-xs text-muted-foreground sm:inline">· {mod.description}</span>
-                                                        )}
-                                                        <span className="text-xs text-muted-foreground">({mod.lessons.length} lessons)</span>
-                                                    </div>
-                                                    <div className="flex gap-1">
-                                                        <button onClick={() => setEditingModule({ id: mod.id, title: mod.title, description: mod.description })} className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-background hover:text-foreground">
-                                                            Edit
-                                                        </button>
-                                                        <button onClick={() => createLesson(mod.id)} className="rounded px-2 py-1 text-xs text-accent hover:bg-background">
-                                                            + Lesson
-                                                        </button>
-                                                        <button onClick={() => setDeleteConfirm({ type: 'module', id: mod.id })} className="rounded px-2 py-1 text-xs text-destructive hover:bg-background">
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
+                                    <SortableContext items={sortedModules.map((m) => `module-${m.id}`)} strategy={verticalListSortingStrategy}>
+                                        <div className="space-y-4">
+                                            {sortedModules.map((mod, idx) => {
+                                                const modLessons = [...mod.lessons].sort((a, b) => a.sort_order - b.sort_order);
 
-                                            {/* Lessons */}
-                                            {mod.lessons.length > 0 && (
-                                                <ul className="divide-y divide-border">
-                                                    {mod.lessons.map((lesson) => (
-                                                        <li key={lesson.id}>
-                                                            {editingLesson?.moduleId === mod.id && editingLesson?.lesson?.id === lesson.id ? (
-                                                                <div className="p-4">
-                                                                    <div className="mb-3 grid grid-cols-3 gap-3">
-                                                                        <div className="col-span-2">
-                                                                            <label className="mb-1 block text-xs font-medium text-foreground">Title</label>
-                                                                            <input
-                                                                                type="text"
-                                                                                value={editingLesson.lesson.title}
-                                                                                onChange={(e) => setEditingLesson({ moduleId: mod.id, lesson: { ...editingLesson.lesson, title: e.target.value } })}
-                                                                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                                return (
+                                                    <SortableModule
+                                                        key={mod.id}
+                                                        mod={mod}
+                                                        idx={idx}
+                                                        courseId={course.id}
+                                                        isEditing={editingModuleId === mod.id}
+                                                        onEdit={() => setEditingModuleId(mod.id)}
+                                                        onSave={() => handleSaveModule(mod)}
+                                                        onCancel={() => setEditingModuleId(null)}
+                                                        onAddLesson={createLesson}
+                                                        onDelete={(id) => setDeleteConfirm({ type: 'module', id })}
+                                                        lessons={
+                                                            modLessons.length > 0 ? (
+                                                                <DndContext
+                                                                    sensors={sensors}
+                                                                    collisionDetection={closestCenter}
+                                                                    onDragEnd={(e) => handleLessonDragEnd(e, mod.id)}
+                                                                >
+                                                                    <SortableContext items={modLessons.map((l) => `lesson-${l.id}`)} strategy={verticalListSortingStrategy}>
+                                                                        {modLessons.map((lesson) => (
+                                                                            <SortableLessonItem
+                                                                                key={lesson.id}
+                                                                                lesson={lesson}
+                                                                                moduleId={mod.id}
+                                                                                courseId={course.id}
+                                                                                isEditing={editingLessonKey === `lesson-${lesson.id}`}
+                                                                                onEdit={(mId, l) => setEditingLessonKey(`lesson-${l.id}`)}
+                                                                                onSave={() => handleSaveLesson(lesson)}
+                                                                                onCancel={() => setEditingLessonKey(null)}
+                                                                                onDelete={(id) => setDeleteConfirm({ type: 'lesson', id })}
                                                                             />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="mb-1 block text-xs font-medium text-foreground">Type</label>
-                                                                            <select
-                                                                                value={editingLesson.lesson.type || 'text'}
-                                                                                onChange={(e) => setEditingLesson({ moduleId: mod.id, lesson: { ...editingLesson.lesson, type: e.target.value } })}
-                                                                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                                            >
-                                                                                <option value="text">Text</option>
-                                                                                <option value="video">Video</option>
-                                                                                <option value="audio">Audio</option>
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {editingLesson.lesson.type === 'video' && (
-                                                                        <div className="mb-3">
-                                                                            <label className="mb-1 block text-xs font-medium text-foreground">Video URL</label>
-                                                                            <input
-                                                                                type="text"
-                                                                                value={editingLesson.lesson.video_url || ''}
-                                                                                onChange={(e) => setEditingLesson({ moduleId: mod.id, lesson: { ...editingLesson.lesson, video_url: e.target.value } })}
-                                                                                placeholder="https://example.com/video.mp4"
-                                                                                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                                            />
-                                                                        </div>
-                                                                    )}
-
-                                                                    {editingLesson.lesson.type === 'text' && (
-                                                                        <div className="mb-3">
-                                                                            <label className="mb-1 block text-xs font-medium text-foreground">Content</label>
-                                                                            <RichTextEditor
-                                                                                content={editingLesson.lesson.content || ''}
-                                                                                onChange={(html) => setEditingLesson({ moduleId: mod.id, lesson: { ...editingLesson.lesson, content: html } })}
-                                                                                placeholder="Write your lesson content here..."
-                                                                            />
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="mb-3">
-                                                                        <label className="mb-1 block text-xs font-medium text-foreground">Duration (minutes)</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={editingLesson.lesson.duration_minutes || ''}
-                                                                            onChange={(e) => setEditingLesson({ moduleId: mod.id, lesson: { ...editingLesson.lesson, duration_minutes: parseInt(e.target.value) || 0 } })}
-                                                                            min="1"
-                                                                            className="block w-32 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                                        />
-                                                                    </div>
-
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <button onClick={() => setEditingLesson(null)} className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted">
-                                                                            Cancel
-                                                                        </button>
-                                                                        <button onClick={saveLesson} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                                                                            Save Lesson
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
+                                                                        ))}
+                                                                    </SortableContext>
+                                                                </DndContext>
                                                             ) : (
-                                                                <div className="flex items-center justify-between px-4 py-2">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-sm text-foreground">{lesson.title}</span>
-                                                                        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground capitalize">{lesson.type}</span>
-                                                                        {lesson.duration_minutes && (
-                                                                            <span className="text-xs text-muted-foreground">{lesson.duration_minutes}m</span>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex gap-1">
-                                                                        <button
-                                                                            onClick={() => setEditingLesson({ moduleId: mod.id, lesson: { id: lesson.id, title: lesson.title, type: lesson.type, content: lesson.content, video_url: lesson.video_url, duration_minutes: lesson.duration_minutes } })}
-                                                                            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                                                                        >
-                                                                            Edit
-                                                                        </button>
-                                                                        <button onClick={() => setDeleteConfirm({ type: 'lesson', id: lesson.id })} className="rounded px-2 py-1 text-xs text-destructive hover:bg-muted">
-                                                                            Delete
-                                                                        </button>
-                                                                    </div>
+                                                                <div className="border-t border-border px-4 py-3 text-center text-xs text-muted-foreground">
+                                                                    No lessons yet.{' '}
+                                                                    <button onClick={() => createLesson(mod.id)} className="text-accent hover:text-accent/80">Add one</button>
                                                                 </div>
-                                                            )}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-
-                                            {mod.lessons.length === 0 && (
-                                                <div className="px-4 py-3 text-center text-xs text-muted-foreground">
-                                                    No lessons yet.{' '}
-                                                    <button onClick={() => createLesson(mod.id)} className="text-accent hover:text-accent/80">Add one</button>
-                                                </div>
-                                            )}
+                                                            )
+                                                        }
+                                                    />
+                                                );
+                                            })}
                                         </div>
-                                    ))}
-                                </div>
+                                    </SortableContext>
+                                </DndContext>
                             )}
                         </div>
                     </div>

@@ -47,4 +47,21 @@ class ModuleController extends Controller
 
         return back()->with('success', 'Module deleted.');
     }
+
+    public function reorder(Request $request, Course $course): RedirectResponse
+    {
+        $this->authorize('update', $course);
+
+        $validated = $request->validate([
+            'modules' => 'required|array',
+            'modules.*.id' => 'required|exists:course_modules,id',
+            'modules.*.sort_order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($validated['modules'] as $item) {
+            CourseModule::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
+        }
+
+        return back()->with('success', 'Modules reordered.');
+    }
 }
