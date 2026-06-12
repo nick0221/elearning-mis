@@ -130,12 +130,12 @@ export default function Show({ course, enrollmentCount, isEnrolled }: { course: 
                                             Continue Learning →
                                         </Link>
                                     ) : (
-                                        <form action={route('courses.enroll', course.id)} method="POST">
-                                            <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
-                                            <button type="submit" className="rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90">
-                                                Enroll in this Course
-                                            </button>
-                                        </form>
+                                        <button
+                                            onClick={() => router.post(route('courses.enroll', course.id))}
+                                            className="rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                                        >
+                                            Enroll in this Course
+                                        </button>
                                     )}
                                 </div>
                             )}
