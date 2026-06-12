@@ -36,6 +36,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         return saved ? JSON.parse(saved) : {};
     });
     const [showCompletionModal, setShowCompletionModal] = useState(false);
+    const [showShortcutsModal, setShowShortcutsModal] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
     const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -114,6 +115,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
             if (e.key === 'f' && videoRef) videoRef.requestFullscreen();
             if (e.key === 'b' && activeLesson) toggleBookmark(activeLesson.id);
             if (e.key === 'd') setDarkMode((d) => !d);
+            if (e.key === '?') setShowShortcutsModal(true);
+            if (e.key === 'Escape') setShowShortcutsModal(false);
         };
         window.addEventListener('keydown', h);
         return () => window.removeEventListener('keydown', h);
@@ -374,6 +377,36 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg transition-all ${toast.type === 'success' ? 'bg-success text-white' : 'bg-info text-white'}`}>
                     <CheckCircle className="h-4 w-4" />
                     <span className="text-sm font-medium">{toast.message}</span>
+                </div>
+            )}
+
+            {/* Keyboard Shortcuts Modal */}
+            {showShortcutsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => setShowShortcutsModal(false)} />
+                    <div className="relative z-50 w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h3>
+                            <button onClick={() => setShowShortcutsModal(false)} className="text-muted-foreground hover:text-foreground">×</button>
+                        </div>
+                        <div className="space-y-3">
+                            {[
+                                ['Space', 'Play / Pause video'],
+                                ['F', 'Toggle fullscreen'],
+                                ['←', 'Previous lesson'],
+                                ['→', 'Next lesson'],
+                                ['B', 'Toggle bookmark'],
+                                ['D', 'Toggle dark mode'],
+                                ['?', 'Show this help'],
+                            ].map(([key, desc]) => (
+                                <div key={key} className="flex items-center justify-between">
+                                    <span className="text-sm text-foreground">{desc}</span>
+                                    <kbd className="rounded border border-border bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">{key}</kbd>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="mt-4 text-xs text-muted-foreground">Press ? or Escape to close</p>
+                    </div>
                 </div>
             )}
         </AuthenticatedLayout>
