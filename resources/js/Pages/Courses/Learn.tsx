@@ -82,11 +82,12 @@ export default function Learn({ course, enrollment, progress }: { course: Course
 
     const handleComplete = () => {
         if (!activeLesson) return;
-        router.post(route('lessons.complete', activeLesson.id), {}, {
+        const lessonId = activeLesson.id;
+        router.post(route('lessons.complete', lessonId), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                router.reload({ only: ['course', 'progress'] });
-                showToast('Lesson marked as complete!');
+                // Force full page reload to ensure progress updates
+                window.location.reload();
             },
         });
     };

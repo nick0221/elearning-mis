@@ -128,6 +128,6 @@ class EnrollmentController extends Controller
         // Redirect to learn page with updated progress
         $course = $lesson->module->course;
 
-        return redirect()->route('courses.learn', $course);
+        return redirect()->route('courses.learn', $course)->with('success', 'Lesson marked as complete!');
     }
 }
