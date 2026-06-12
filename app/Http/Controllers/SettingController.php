@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,8 +28,24 @@ class SettingController extends Controller
             'settings.*.type' => 'required|string',
         ]);
 
+        $changedKeys = [];
+
         foreach ($validated['settings'] as $item) {
+            $oldValue = Setting::get($item['key']);
+            if ($oldValue !== $item['value']) {
+                $changedKeys[] = $item['key'];
+            }
             Setting::set($item['key'], $item['value'], $item['group'], $item['type']);
+        }
+
+        if (!empty($changedKeys)) {
+            ActivityLog::create([
+                'user_id' => $this->userId(),
+                'action' => 'settings_updated',
+                'subject_type' => Setting::class,
+                'subject_id' => null,
+                'properties' => ['changed_keys' => $changedKeys],
+            ]);
         }
 
         return back()->with('success', 'Settings updated.');
