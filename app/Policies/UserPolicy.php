@@ -37,4 +37,9 @@ class UserPolicy
     {
         return $user->can('manage roles & permissions');
     }
+
+    public function impersonate(User $user, User $model): bool
+    {
+        return $user->can('manage users') && $user->id !== $model->id;
+    }
 }

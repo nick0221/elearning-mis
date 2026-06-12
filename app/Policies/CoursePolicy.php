@@ -32,4 +32,15 @@ class CoursePolicy
     {
         return $user->can('edit/delete any course');
     }
+
+    public function publish(User $user, Course $course): bool
+    {
+        return $user->can('edit/delete any course')
+            || $course->instructors()->where('user_id', $user->id)->exists();
+    }
+
+    public function clone(User $user, Course $course): bool
+    {
+        return $user->can('create/edit own courses');
+    }
 }
