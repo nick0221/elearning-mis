@@ -22,11 +22,16 @@ export default function Login({ status, canResetPassword }: { status?: string; c
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Sign in" />
 
             <div className="mb-6 text-center">
-                <h2 className="text-2xl font-bold text-foreground">Welcome Back</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                <h2 className="text-xl font-bold text-foreground">Welcome back</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Sign in to your account to continue</p>
             </div>
 
             {status && (
@@ -35,7 +40,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                 </div>
             )}
 
-            <form onSubmit={submit}>
+            <form onSubmit={submit} className="space-y-4">
                 <div>
                     <InputLabel htmlFor="email" value="Email" />
                     <TextInput
@@ -47,12 +52,20 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                         autoComplete="username"
                         isFocused={true}
                         onChange={(e) => setData('email', e.target.value)}
+                        placeholder="you@example.com"
                     />
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                <div>
+                    <div className="flex items-center justify-between">
+                        <InputLabel htmlFor="password" value="Password" />
+                        {canResetPassword && (
+                            <Link href={route('password.request')} className="text-xs text-accent hover:text-accent/80">
+                                Forgot?
+                            </Link>
+                        )}
+                    </div>
                     <TextInput
                         id="password"
                         type="password"
@@ -61,43 +74,37 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                         className="mt-1 block w-full"
                         autoComplete="current-password"
                         onChange={(e) => setData('password', e.target.value)}
+                        placeholder="Enter your password"
                     />
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) => setData('remember', e.target.checked)}
-                        />
-                        <span className="ms-2 text-sm text-muted-foreground">Remember me</span>
-                    </label>
+                <div className="flex items-center">
+                    <Checkbox
+                        name="remember"
+                        checked={data.remember}
+                        onChange={(e) => setData('remember', e.target.checked)}
+                    />
+                    <span className="ms-2 text-sm text-muted-foreground">Remember me</span>
                 </div>
 
-                <div className="mt-6">
-                    <PrimaryButton className="w-full justify-center" disabled={processing}>
-                        {processing ? 'Signing in...' : 'Sign in'}
-                    </PrimaryButton>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between text-sm">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="text-accent hover:text-accent/80"
-                        >
-                            Forgot password?
-                        </Link>
+                <PrimaryButton className="w-full justify-center gap-2" disabled={processing}>
+                    {processing ? (
+                        <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Signing in...
+                        </>
+                    ) : (
+                        'Sign in'
                     )}
-                    <Link
-                        href={route('register')}
-                        className="text-accent hover:text-accent/80"
-                    >
-                        Create an account
+                </PrimaryButton>
+
+                <p className="text-center text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <Link href={route('register')} className="font-medium text-accent hover:text-accent/80">
+                        Create one
                     </Link>
-                </div>
+                </p>
             </form>
         </GuestLayout>
     );
