@@ -67,7 +67,7 @@ class MessageController extends Controller
     {
         $message->load(['sender', 'receiver']);
 
-        if ($message->receiver_id === request()->user()->id && !$message->read_at) {
+        if ($message->receiver_id === request()->user()->id && ! $message->read_at) {
             $message->update(['read_at' => now()]);
         }
 

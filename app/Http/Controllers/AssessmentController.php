@@ -7,9 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\Question;
-use App\Models\QuestionOption;
 use App\Models\Submission;
-use App\Models\Grade;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -142,7 +140,7 @@ class AssessmentController extends Controller
             'explanation' => $validated['explanation'] ?? null,
         ]);
 
-        if (!empty($validated['options'])) {
+        if (! empty($validated['options'])) {
             foreach ($validated['options'] as $i => $opt) {
                 $question->options()->create([
                     'body' => $opt['body'],

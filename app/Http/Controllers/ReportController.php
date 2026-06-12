@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Enrollment;
-use App\Models\User;
 use App\Models\Submission;
-use App\Models\Grade;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -156,7 +155,7 @@ class ReportController extends Controller
             ->groupBy('roles.name')
             ->get();
 
-        $activityLogs = \App\Models\ActivityLog::with('user')
+        $activityLogs = ActivityLog::with('user')
             ->latest()
             ->limit(20)
             ->get();
@@ -173,7 +172,7 @@ class ReportController extends Controller
     {
         $this->authorize('viewSystemAnalytics');
 
-        $filename = "report_{$type}_" . now()->format('Y-m-d_H-i-s') . '.csv';
+        $filename = "report_{$type}_".now()->format('Y-m-d_H-i-s').'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -215,8 +214,11 @@ class ReportController extends Controller
     protected function calculateCompletionRate(): float
     {
         $total = Enrollment::count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
         $completed = Enrollment::where('status', 'completed')->count();
+
         return round(($completed / $total) * 100, 1);
     }
 }

@@ -36,7 +36,7 @@ class DiscussionPolicy
 
     public function reply(User $user, Discussion $discussion): bool
     {
-        return !$discussion->is_locked;
+        return ! $discussion->is_locked;
     }
 
     public function pin(User $user, Discussion $discussion): bool

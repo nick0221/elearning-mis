@@ -75,7 +75,7 @@ class EnrollmentController extends Controller
         $user = request()->user();
         $enrollment = $course->enrollments()->where('user_id', $user->id)->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return redirect()->route('courses.show', $course)
                 ->with('error', 'You must enroll in this course first.');
         }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
-use App\Models\Course;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

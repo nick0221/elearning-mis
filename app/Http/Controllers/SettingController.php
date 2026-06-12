@@ -38,7 +38,7 @@ class SettingController extends Controller
             Setting::set($item['key'], $item['value'], $item['group'], $item['type']);
         }
 
-        if (!empty($changedKeys)) {
+        if (! empty($changedKeys)) {
             ActivityLog::create([
                 'user_id' => $this->userId(),
                 'action' => 'settings_updated',

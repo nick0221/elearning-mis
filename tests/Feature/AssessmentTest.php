@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,13 +14,15 @@ class AssessmentTest extends TestCase
     use RefreshDatabase;
 
     protected User $instructor;
+
     protected User $student;
+
     protected Course $course;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        $this->seed(RolePermissionSeeder::class);
 
         $this->instructor = User::factory()->create();
         $this->instructor->assignRole('instructor');

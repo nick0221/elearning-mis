@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
-use App\Models\Discussion;
-use App\Models\DiscussionReply;
 use App\Models\Course;
+use App\Models\Discussion;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -22,7 +21,7 @@ class DiscussionController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('body', 'like', "%{$search}%");
+                    ->orWhere('body', 'like', "%{$search}%");
             });
         }
 

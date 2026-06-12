@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CourseModule;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class LessonController extends Controller
 {
