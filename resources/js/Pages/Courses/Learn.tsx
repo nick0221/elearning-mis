@@ -50,6 +50,16 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
 
+    const currentModule = course.modules?.find((m) => (m.lessons || []).some((l) => l.id === activeLesson?.id));
+    const currentModuleIdx = course.modules?.findIndex((m) => m.id === currentModule?.id) ?? 0;
+
+    const isModuleLocked = (modIdx: number) => {
+        if (modIdx === 0) return false;
+        const prevModule = course.modules[modIdx - 1];
+        if (!prevModule) return false;
+        return (prevModule.lessons || []).some((l) => l.lessonCompletions?.length === 0);
+    };
+
     // Find next lesson that is NOT in a locked module
     let nextLesson = null;
     for (let i = currentIndex + 1; i < allLessons.length; i++) {
@@ -61,15 +71,6 @@ export default function Learn({ course, enrollment, progress }: { course: Course
             break;
         }
     }
-
-    const currentModule = course.modules?.find((m) => (m.lessons || []).some((l) => l.id === activeLesson?.id));
-    const currentModuleIdx = course.modules?.findIndex((m) => m.id === currentModule?.id) ?? 0;
-    const isModuleLocked = (modIdx: number) => {
-        if (modIdx === 0) return false;
-        const prevModule = course.modules[modIdx - 1];
-        if (!prevModule) return false;
-        return (prevModule.lessons || []).some((l) => l.lessonCompletions?.length === 0);
-    };
 
     useEffect(() => {
         if (activeLesson) return;
