@@ -36,6 +36,12 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         return saved ? JSON.parse(saved) : {};
     });
     const [showCompletionModal, setShowCompletionModal] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'info' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     const [newReply, setNewReply] = useState('');
 
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
@@ -78,14 +84,24 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const handleComplete = () => {
         if (!activeLesson) return;
         router.post(route('lessons.complete', activeLesson.id), {}, {
-            onSuccess: () => { router.reload({ only: ['course'] }); if (progress >= 100) setShowCompletionModal(true); },
+            onSuccess: () => {
+                router.reload({ only: ['course', 'progress'] });
+                showToast('Lesson marked as complete!');
+            },
         });
     };
 
     const handleUnenroll = () => { router.delete(route('courses.unenroll', course.id)); setShowUnenrollDialog(false); };
-    const toggleBookmark = (id: number) => { setBookmarks((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
+    const toggleBookmark = (id: number) => {
+        setBookmarks((p) => {
+            const n = new Set(p);
+            n.has(id) ? n.delete(id) : n.add(id);
+            return n;
+        });
+        showToast(bookmarks.has(id) ? 'Bookmark removed' : 'Lesson bookmarked!');
+    };
     const handleSpeedChange = (s: number) => { setPlaybackSpeed(s); if (videoRef) videoRef.playbackRate = s; };
-    const handleShare = () => { navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard!'); };
+    const handleShare = () => { navigator.clipboard.writeText(window.location.href); showToast('Link copied to clipboard!'); };
     const handlePrint = () => { window.print(); };
 
     // Keyboard shortcuts
@@ -352,6 +368,14 @@ export default function Learn({ course, enrollment, progress }: { course: Course
             {/* Modals */}
             <ConfirmDialog open={showCompletionModal} title="🎉 Congratulations!" message="You've completed this course! Your progress has been saved." confirmLabel="View My Courses" variant="info" onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }} onCancel={() => setShowCompletionModal(false)} />
             <ConfirmDialog open={showUnenrollDialog} title="Unenroll from Course" message="Are you sure? Your progress will be saved." confirmLabel="Unenroll" variant="warning" onConfirm={handleUnenroll} onCancel={() => setShowUnenrollDialog(false)} />
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg transition-all ${toast.type === 'success' ? 'bg-success text-white' : 'bg-info text-white'}`}>
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">{toast.message}</span>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
