@@ -16,35 +16,80 @@ interface Course { id: number; title: string; description?: string; modules: Cou
 interface Enrollment { id: number; status: string; }
 
 export default function Learn({ course, enrollment, progress }: { course: Course; enrollment: Enrollment; progress: number }) {
-    const getInitialLesson = (): Lesson | null => {
-        for (const mod of course.modules || []) {
-            for (const lesson of mod.lessons || []) {
-                if (lesson.lessonCompletions?.length === 0) return lesson;
-            }
-        }
-        return course.modules?.[0]?.lessons?.[0] || null;
-    };
-
-    const [activeLesson, setActiveLesson] = useState<Lesson | null>(getInitialLesson());
+    const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
     const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
+    const [bookmarks, setBookmarks] = useState<Set<number>>(() => {
+        const saved = localStorage.getItem(`bookmarks-${course.id}`);
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
+    const [notes, setNotes] = useState<Record<number, string>>(() => {
+        const saved = localStorage.getItem(`notes-${course.id}`);
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+    // Find first incomplete lesson on mount
+    useEffect(() => {
+        if (activeLesson) return;
+        const lastLessonId = localStorage.getItem(`last-lesson-${course.id}`);
+        if (lastLessonId) {
+            const found = allLessons.find((l) => l.id === parseInt(lastLessonId));
+            if (found) { setActiveLesson(found); return; }
+        }
+        for (const mod of course.modules || []) {
+            for (const lesson of mod.lessons || []) {
+                if (lesson.lessonCompletions?.length === 0) { setActiveLesson(lesson); return; }
+            }
+        }
+        setActiveLesson(course.modules?.[0]?.lessons?.[0] || null);
+    }, []);
 
     const allLessons = course.modules?.flatMap((mod) => mod.lessons || []) || [];
     const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
     const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
     const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
+    // Save last lesson
+    useEffect(() => {
+        if (activeLesson) localStorage.setItem(`last-lesson-${course.id}`, activeLesson.id.toString());
+    }, [activeLesson]);
+
+    // Save notes
+    useEffect(() => {
+        localStorage.setItem(`notes-${course.id}`, JSON.stringify(notes));
+    }, [notes, course.id]);
+
+    // Save bookmarks
+    useEffect(() => {
+        localStorage.setItem(`bookmarks-${course.id}`, JSON.stringify([...bookmarks]));
+    }, [bookmarks, course.id]);
+
     const handleComplete = () => {
         if (!activeLesson) return;
-        router.post(route('lessons.complete', activeLesson.id), {}, { onSuccess: () => router.reload({ only: ['course'] }) });
+        router.post(route('lessons.complete', activeLesson.id), {}, {
+            onSuccess: () => {
+                router.reload({ only: ['course'] });
+                if (progress >= 100) setShowCompletionModal(true);
+            },
+        });
     };
 
     const handleUnenroll = () => {
         router.delete(route('courses.unenroll', course.id));
         setShowUnenrollDialog(false);
+    };
+
+    const toggleBookmark = (lessonId: number) => {
+        setBookmarks((prev) => {
+            const next = new Set(prev);
+            if (next.has(lessonId)) next.delete(lessonId);
+            else next.add(lessonId);
+            return next;
+        });
     };
 
     const handleSpeedChange = (speed: number) => {
@@ -62,15 +107,13 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 e.preventDefault();
                 videoRef.paused ? videoRef.play() : videoRef.pause();
             }
-            if (e.key === 'f' && videoRef) {
-                videoRef.requestFullscreen();
-            }
+            if (e.key === 'f' && videoRef) videoRef.requestFullscreen();
+            if (e.key === 'b' && activeLesson) toggleBookmark(activeLesson.id);
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [nextLesson, prevLesson, videoRef]);
+    }, [nextLesson, prevLesson, videoRef, activeLesson]);
 
-    // Save playback speed
     useEffect(() => {
         const saved = localStorage.getItem('playback-speed');
         if (saved) setPlaybackSpeed(parseFloat(saved));
@@ -111,7 +154,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
                                 <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${progress}%` }} />
                             </div>
-                            {progress === 100 && <p className="mt-2 text-xs font-medium text-success">Course completed!</p>}
+                            {progress === 100 && <p className="mt-2 text-xs font-medium text-success">🎉 Course completed!</p>}
                         </div>
                         <div className="space-y-4">
                             {course.modules.map((mod, modIdx) => {
@@ -127,6 +170,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                             {(mod.lessons || []).map((lesson) => {
                                                 const isCompleted = lesson.lessonCompletions?.length > 0;
                                                 const isActive = activeLesson?.id === lesson.id;
+                                                const isBookmarked = bookmarks.has(lesson.id);
                                                 return (
                                                     <li key={lesson.id}>
                                                         <button onClick={() => setActiveLesson(lesson)} className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${isActive ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-success/10 text-success' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
@@ -136,7 +180,8 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                                                 ) : (
                                                                     <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>
                                                                 )}
-                                                                <span className="truncate">{lesson.title}</span>
+                                                                <span className="truncate flex-1">{lesson.title}</span>
+                                                                {isBookmarked && <span className="text-[10px]">🔖</span>}
                                                                 {lesson.type === 'video' && <span className="text-[10px]">📹</span>}
                                                                 {lesson.type === 'audio' && <span className="text-[10px]">🎧</span>}
                                                             </span>
@@ -176,14 +221,19 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                             <span>· {activeLesson.type === 'video' ? '📹 Video' : activeLesson.type === 'audio' ? '🎧 Audio' : '📄 Text'}</span>
                                         </div>
                                     </div>
-                                    {activeLesson.lessonCompletions?.length === 0 ? (
-                                        <button onClick={handleComplete} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Mark Complete</button>
-                                    ) : (
-                                        <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-                                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                            Completed
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => activeLesson && toggleBookmark(activeLesson.id)} className={`rounded-md p-2 transition-colors ${bookmarks.has(activeLesson?.id || 0) ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:bg-muted'}`} title="Bookmark (B)">
+                                            <svg className="h-5 w-5" fill={bookmarks.has(activeLesson?.id || 0) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                                        </button>
+                                        {activeLesson.lessonCompletions?.length === 0 ? (
+                                            <button onClick={handleComplete} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Mark Complete</button>
+                                        ) : (
+                                            <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                                                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                Completed
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -191,35 +241,25 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             {activeLesson.type === 'video' && activeLesson.video_url && (
                                 <div className="mb-4">
                                     <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg">
-                                        <video
-                                            ref={setVideoRef}
-                                            src={activeLesson.video_url}
-                                            className="h-full w-full"
-                                            controls
-                                            playbackRate={playbackSpeed}
-                                        />
+                                        <video ref={setVideoRef} src={activeLesson.video_url} className="h-full w-full" controls playbackRate={playbackSpeed} />
                                     </div>
-                                    {/* Video Controls */}
                                     <div className="mt-2 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-muted-foreground">Speed:</span>
                                             {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
-                                                <button
-                                                    key={speed}
-                                                    onClick={() => handleSpeedChange(speed)}
-                                                    className={`rounded px-2 py-1 text-xs font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                                                >
+                                                <button key={speed} onClick={() => handleSpeedChange(speed)} className={`rounded px-2 py-1 text-xs font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                                                     {speed}x
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                            <span>⌨️</span>
-                                            <span>Space: play/pause</span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>⌨️ Space: play/pause</span>
                                             <span>·</span>
                                             <span>F: fullscreen</span>
                                             <span>·</span>
                                             <span>←→: prev/next</span>
+                                            <span>·</span>
+                                            <span>B: bookmark</span>
                                         </div>
                                     </div>
                                 </div>
@@ -242,7 +282,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 <div className="mb-6">
                                     <div className="flex gap-1 border-b border-border">
                                         <button onClick={() => setActiveTab('content')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'content' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Content</button>
-                                        <button onClick={() => setActiveTab('notes')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'notes' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Notes</button>
+                                        <button onClick={() => setActiveTab('notes')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'notes' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
+                                            Notes {notes[activeLesson.id] && '📝'}
+                                        </button>
                                     </div>
                                     {activeTab === 'content' && (
                                         <div className="mt-4 rounded-lg border border-border bg-card p-6">
@@ -251,8 +293,14 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     )}
                                     {activeTab === 'notes' && (
                                         <div className="mt-4 rounded-lg border border-border bg-card p-6">
-                                            <p className="text-sm text-muted-foreground">Take notes for this lesson:</p>
-                                            <textarea className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" rows={6} placeholder="Write your notes here..." />
+                                            <p className="text-sm text-muted-foreground mb-2">Your notes for this lesson (saved automatically):</p>
+                                            <textarea
+                                                value={notes[activeLesson.id] || ''}
+                                                onChange={(e) => setNotes((prev) => ({ ...prev, [activeLesson.id]: e.target.value }))}
+                                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                rows={8}
+                                                placeholder="Write your notes here... (auto-saved)"
+                                            />
                                         </div>
                                     )}
                                 </div>
@@ -291,8 +339,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     </button>
                                 ) : progress === 100 && (
                                     <Link href={route('courses.my')} className="flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success/90">
-                                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        Course Complete!
+                                        🎉 Course Complete!
                                     </Link>
                                 )}
                             </div>
@@ -308,7 +355,26 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                 </div>
             </div>
 
-            <ConfirmDialog open={showUnenrollDialog} title="Unenroll from Course" message="Are you sure you want to unenroll? Your progress will be saved but you won't have access to course content." confirmLabel="Unenroll" variant="warning" onConfirm={handleUnenroll} onCancel={() => setShowUnenrollDialog(false)} />
+            {/* Course Completion Modal */}
+            <ConfirmDialog
+                open={showCompletionModal}
+                title="🎉 Congratulations!"
+                message="You've completed this course! Your progress has been saved. You can now download your certificate."
+                confirmLabel="View My Courses"
+                variant="info"
+                onConfirm={() => { setShowCompletionModal(false); router.visit(route('courses.my')); }}
+                onCancel={() => setShowCompletionModal(false)}
+            />
+
+            <ConfirmDialog
+                open={showUnenrollDialog}
+                title="Unenroll from Course"
+                message="Are you sure you want to unenroll? Your progress will be saved but you won't have access to course content."
+                confirmLabel="Unenroll"
+                variant="warning"
+                onConfirm={handleUnenroll}
+                onCancel={() => setShowUnenrollDialog(false)}
+            />
         </AuthenticatedLayout>
     );
 }
