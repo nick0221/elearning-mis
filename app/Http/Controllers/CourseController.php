@@ -35,7 +35,23 @@ class CourseController extends Controller
             $query->where('category_id', $categoryId);
         }
 
-        $courses = $query->latest()->paginate(12)->withQueryString();
+        // Sorting
+        $sort = $request->input('sort', '');
+        switch ($sort) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'title':
+                $query->orderBy('title');
+                break;
+            case 'popular':
+                $query->withCount('enrollments')->orderByDesc('enrollments_count');
+                break;
+            default:
+                $query->latest();
+        }
+
+        $courses = $query->paginate(12)->withQueryString();
         $categories = Category::orderBy('name')->get();
 
         return Inertia::render('Courses/Index', [
