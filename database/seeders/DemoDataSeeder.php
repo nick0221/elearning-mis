@@ -140,8 +140,9 @@ class DemoDataSeeder extends Seeder
                         'title' => $lessonData['title'],
                         'content' => $lessonData['content'],
                         'type' => $lessonData['type'],
+                        'video_url' => $lessonData['video_url'] ?? null,
                         'sort_order' => $lessonIndex,
-                        'duration_minutes' => rand(5, 20),
+                        'duration_minutes' => $lessonData['duration_minutes'] ?? rand(5, 20),
                     ]);
                 }
             }
