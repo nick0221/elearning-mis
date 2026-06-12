@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Grade {
     score: number;
@@ -30,6 +31,8 @@ interface Assessment {
 }
 
 export default function Show({ assessment }: { assessment: Assessment }) {
+    const { canCreateAssessments, canTakeAssessments } = usePermission();
+
     const handleDelete = () => {
         if (confirm('Delete this assessment?')) {
             router.delete(route('assessments.destroy', assessment.id));
@@ -51,9 +54,15 @@ export default function Show({ assessment }: { assessment: Assessment }) {
                                 <span className="inline-flex rounded-full bg-info/10 px-2 text-xs font-semibold text-info">Pass: {assessment.passing_score}%</span>
                             </div>
                             <div className="flex gap-2">
-                                <Link href={route('assessments.edit', assessment.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Edit</Link>
-                                <Link href={route('assessments.take', assessment.id)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Take</Link>
-                                <button onClick={handleDelete} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">Delete</button>
+                                {canCreateAssessments() && (
+                                    <Link href={route('assessments.edit', assessment.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Edit</Link>
+                                )}
+                                {canTakeAssessments() && (
+                                    <Link href={route('assessments.take', assessment.id)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Take</Link>
+                                )}
+                                {canCreateAssessments() && (
+                                    <button onClick={handleDelete} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">Delete</button>
+                                )}
                             </div>
                         </div>
                         <dl className="grid grid-cols-2 gap-4 text-sm">

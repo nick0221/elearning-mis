@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface User { id: number; name: string; }
 interface Course { id: number; title: string; }

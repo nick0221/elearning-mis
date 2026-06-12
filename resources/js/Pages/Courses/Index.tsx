@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Category {
     id: number;
@@ -29,6 +30,7 @@ interface PaginatedData {
 }
 
 export default function Index({ courses, categories, filters }: { courses: PaginatedData; categories: Category[]; filters: { search?: string; status?: string; category_id?: string } }) {
+    const { canCreateCourses } = usePermission();
     const [search, setSearch] = useState(filters.search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -78,12 +80,14 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
                             </button>
                         </form>
 
-                        <Link
-                            href={route('courses.create')}
-                            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                        >
-                            Create Course
-                        </Link>
+                        {canCreateCourses() && (
+                            <Link
+                                href={route('courses.create')}
+                                className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                            >
+                                Create Course
+                            </Link>
+                        )}
                     </div>
 
                     {/* Status Filters */}

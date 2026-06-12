@@ -1,5 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Head, Link } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Course {
     id: number;
@@ -23,6 +25,8 @@ interface PaginatedData {
 }
 
 export default function Index({ assessments }: { assessments: PaginatedData }) {
+    const { canCreateAssessments } = usePermission();
+
     return (
         <AuthenticatedLayout
             header={<h2 className="text-xl font-semibold leading-tight text-foreground">Assessments</h2>}
@@ -31,11 +35,13 @@ export default function Index({ assessments }: { assessments: PaginatedData }) {
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="mb-6 flex justify-end">
-                        <Link href={route('assessments.create')} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
-                            Create Assessment
-                        </Link>
-                    </div>
+                    {canCreateAssessments() && (
+                        <div className="mb-6 flex justify-end">
+                            <Link href={route('assessments.create')} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                                Create Assessment
+                            </Link>
+                        </div>
+                    )}
 
                     <div className="overflow-hidden bg-card shadow-sm sm:rounded-lg">
                         <table className="min-w-full divide-y divide-border">

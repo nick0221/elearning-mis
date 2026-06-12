@@ -1,6 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface User { id: number; name: string; }
 interface Course { id: number; title: string; }
@@ -23,6 +25,7 @@ interface PaginatedData {
 }
 
 export default function Index({ announcements }: { announcements: PaginatedData }) {
+    const { canSendAnnouncements } = usePermission();
     const [showForm, setShowForm] = useState(false);
     const { data, setData, post, processing, reset } = useForm({
         title: '', body: '', course_id: '', is_pinned: false,
@@ -40,9 +43,11 @@ export default function Index({ announcements }: { announcements: PaginatedData 
             <Head title="Announcements" />
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-4">
-                    <button onClick={() => setShowForm(!showForm)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
-                        {showForm ? 'Cancel' : 'New Announcement'}
-                    </button>
+                    {canSendAnnouncements() && (
+                        <button onClick={() => setShowForm(!showForm)} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                            {showForm ? 'Cancel' : 'New Announcement'}
+                        </button>
+                    )}
 
                     {showForm && (
                         <form onSubmit={submit} className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -72,7 +77,9 @@ export default function Index({ announcements }: { announcements: PaginatedData 
                                         {a.course && <> · {a.course.title}</>}
                                     </p>
                                 </div>
-                                <button onClick={() => router.delete(route('announcements.destroy', a.id))} className="text-xs text-destructive hover:text-destructive/80">Delete</button>
+                                {canSendAnnouncements() && (
+                                    <button onClick={() => router.delete(route('announcements.destroy', a.id))} className="text-xs text-destructive hover:text-destructive/80">Delete</button>
+                                )}
                             </div>
                         </div>
                     ))}

@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface ActivityLog {
     id: number;
@@ -24,7 +25,9 @@ interface User {
 }
 
 export default function Show({ user }: { user: User }) {
+    const { canManageUsers, user: currentUser } = usePermission();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const canEdit = canManageUsers() || currentUser?.id === user.id;
 
     const handleDelete = () => {
         router.delete(route('users.destroy', user.id));
@@ -73,14 +76,18 @@ export default function Show({ user }: { user: User }) {
                                                 <p className="text-sm text-muted-foreground">{user.email}</p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Link href={route('users.edit', user.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                                                Edit
-                                            </Link>
+                                {canEdit && (
+                                    <div className="flex gap-2">
+                                        <Link href={route('users.edit', user.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                                            Edit
+                                        </Link>
+                                        {canManageUsers() && currentUser?.id !== user.id && (
                                             <button onClick={() => setShowDeleteDialog(true)} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
                                                 Delete
                                             </button>
-                                        </div>
+                                        )}
+                                    </div>
+                                )}
                                     </div>
 
                                     <dl className="space-y-4">

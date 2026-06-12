@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Lesson {
     id: number;
@@ -38,7 +39,9 @@ interface Course {
 }
 
 export default function Show({ course, enrollmentCount }: { course: Course; enrollmentCount: number }) {
+    const { canCreateCourses, canEditAnyCourse } = usePermission();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const canEdit = canEditAnyCourse() || course.instructors?.some((i) => i.id === usePermission().user?.id);
 
     const handleDelete = () => {
         router.delete(route('courses.destroy', course.id));
@@ -78,14 +81,18 @@ export default function Show({ course, enrollmentCount }: { course: Course; enro
                                         <span className="inline-flex rounded-full bg-muted px-2 text-xs font-semibold text-muted-foreground">{course.category.name}</span>
                                     )}
                                 </div>
-                                <div className="flex gap-2">
-                                    <Link href={route('courses.edit', course.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                                        Edit
-                                    </Link>
-                                    <button onClick={() => setShowDeleteDialog(true)} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
-                                        Delete
-                                    </button>
-                                </div>
+                                {canEdit && (
+                                    <div className="flex gap-2">
+                                        <Link href={route('courses.edit', course.id)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                                            Edit
+                                        </Link>
+                                        {canEditAnyCourse() && (
+                                            <button onClick={() => setShowDeleteDialog(true)} className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+                                                Delete
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {course.description && (

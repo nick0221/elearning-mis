@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface User {
     id: number;
@@ -22,6 +23,7 @@ interface PaginatedData {
 }
 
 export default function Index({ users, filters }: { users: PaginatedData; filters: { search?: string; role?: string } }) {
+    const { canManageUsers } = usePermission();
     const [search, setSearch] = useState(filters.search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -71,12 +73,14 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
                             </button>
                         </form>
 
-                        <Link
-                            href={route('users.create')}
-                            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                        >
-                            Create User
-                        </Link>
+                        {canManageUsers() && (
+                            <Link
+                                href={route('users.create')}
+                                className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                            >
+                                Create User
+                            </Link>
+                        )}
                     </div>
 
                     <div className="mb-4 flex flex-wrap gap-2">
