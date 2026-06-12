@@ -27,3 +27,7 @@ Homestead.yaml
 Thumbs.db
 /database/database.sqlite
 /.php-cs-fixer.cache
+
+# Laravel Boost auto-generated files
+/boost.json
+.mcp.json

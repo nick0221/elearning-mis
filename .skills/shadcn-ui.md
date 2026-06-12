@@ -1,3 +1,11 @@
+---
+name: shadcn-ui-components
+description: "Project-specific shadcn/ui component patterns and conventions. Activate when creating or modifying UI components with shadcn/ui primitives, forms, dialogs, cards, and layouts."
+license: MIT
+metadata:
+  author: project
+---
+
 # shadcn/ui Guidelines
 
 ## Critical Rules

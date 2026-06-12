@@ -1,3 +1,11 @@
+---
+name: react-best-practices
+description: "React 19 best practices, including performance optimization, re-render prevention, hooks patterns, and component composition. Activate when building or reviewing React components, hooks, or JSX in this project."
+license: MIT
+metadata:
+  author: project
+---
+
 # React Best Practices
 
 ## Performance

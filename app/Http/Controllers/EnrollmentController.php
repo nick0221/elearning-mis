@@ -85,7 +85,7 @@ class EnrollmentController extends Controller
 
         // Load completions separately to ensure proper filtering
         $lessonIds = $course->modules->flatMap(fn ($m) => $m->lessons->pluck('id'))->toArray();
-        $completions = \App\Models\LessonCompletion::whereIn('lesson_id', $lessonIds)
+        $completions = LessonCompletion::whereIn('lesson_id', $lessonIds)
             ->where('user_id', $user->id)
             ->get()
             ->keyBy('lesson_id');
