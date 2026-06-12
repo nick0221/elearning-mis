@@ -125,6 +125,9 @@ class EnrollmentController extends Controller
             'properties' => ['lesson_title' => $lesson->title],
         ]);
 
-        return back()->with('success', 'Lesson marked as complete.');
+        // Redirect to learn page with updated progress
+        $course = $lesson->module->course;
+
+        return redirect()->route('courses.learn', $course);
     }
 }
