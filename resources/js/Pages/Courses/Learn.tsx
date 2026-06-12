@@ -3,6 +3,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextContent from '@/Components/RichTextContent';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Play, Pause, Maximize, ChevronLeft, ChevronRight, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, MessageSquare, FileCode } from 'lucide-react';
 
 interface Attachment { id: number; filename: string; mime_type: string; size_bytes: number; }
 interface LessonCompletion { id: number; }
@@ -122,13 +123,13 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={() => setDarkMode(!darkMode)} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Toggle dark mode (D)">
-                            {darkMode ? '☀️' : '🌙'}
+                            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                         </button>
                         <button onClick={handleShare} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Share">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 100-5.384 3 3 0 000 5.384zm0 0a3 3 0 100-5.384 3 3 0 000 5.384z" /></svg>
+                            <Share2 className="h-4 w-4" />
                         </button>
                         <button onClick={handlePrint} className="rounded-md p-2 text-muted-foreground hover:bg-muted" title="Print">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10V5z" /></svg>
+                            <Printer className="h-4 w-4" />
                         </button>
                         <Link href={route('courses.my')} className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">My Courses</Link>
                         <button onClick={() => setShowUnenrollDialog(true)} className="rounded-md border border-destructive/50 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10">Unenroll</button>
@@ -158,8 +159,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 return (
                                     <div key={mod.id} className={locked ? 'opacity-50' : ''}>
                                         <div className="mb-2 flex items-center justify-between">
-                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                                {locked ? '🔒' : ''} Module {modIdx + 1}
+                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                                {locked && <Lock className="h-3 w-3" />}
+                                                Module {modIdx + 1}
                                             </h3>
                                             <span className="text-xs text-muted-foreground">{completedInModule}/{(mod.lessons || []).length}</span>
                                         </div>
@@ -180,9 +182,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                                                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current text-[10px]">{(mod.lessons || []).indexOf(lesson) + 1}</span>
                                                                     )}
                                                                     <span className="truncate flex-1">{lesson.title}</span>
-                                                                    {isBookmarked && <span className="text-[10px]">🔖</span>}
-                                                                    {lesson.type === 'video' && <span className="text-[10px]">📹</span>}
-                                                                    {lesson.type === 'audio' && <span className="text-[10px]">🎧</span>}
+                                                                {isBookmarked && <BookmarkCheck className="h-3 w-3 text-accent" />}
+                                                                {lesson.type === 'video' && <Video className="h-3 w-3 text-muted-foreground" />}
+                                                                {lesson.type === 'audio' && <Headphones className="h-3 w-3 text-muted-foreground" />}
                                                                 </span>
                                                             </button>
                                                         </li>
@@ -223,13 +225,13 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => activeLesson && toggleBookmark(activeLesson.id)} className={`rounded-md p-2 transition-colors ${bookmarks.has(activeLesson?.id || 0) ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:bg-muted'}`} title="Bookmark (B)">
-                                            <svg className="h-5 w-5" fill={bookmarks.has(activeLesson?.id || 0) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                                            {bookmarks.has(activeLesson?.id || 0) ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
                                         </button>
                                         {activeLesson.lessonCompletions?.length === 0 ? (
                                             <button onClick={handleComplete} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90">Mark Complete</button>
                                         ) : (
                                             <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-                                                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                <CheckCircle className="h-3 w-3" />
                                                 Completed
                                             </span>
                                         )}
@@ -250,11 +252,14 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                                 <button key={speed} onClick={() => handleSpeedChange(speed)} className={`rounded px-2 py-1 text-xs font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>{speed}x</button>
                                             ))}
                                         </div>
-                                        <button onClick={() => setShowTranscript(!showTranscript)} className="text-xs text-accent hover:text-accent/80">{showTranscript ? 'Hide' : 'Show'} Transcript</button>
+                                        <button onClick={() => setShowTranscript(!showTranscript)} className="flex items-center gap-1 text-xs text-accent hover:text-accent/80">
+                                            <FileText className="h-3 w-3" />
+                                            {showTranscript ? 'Hide' : 'Show'} Transcript
+                                        </button>
                                     </div>
                                     {showTranscript && (
                                         <div className="mt-3 rounded-lg border border-border bg-card p-4">
-                                            <h4 className="text-sm font-medium text-foreground mb-2">📝 Transcript</h4>
+                                            <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2"><FileCode className="h-4 w-4" /> Transcript</h4>
                                             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{activeLesson.content || 'No transcript available for this video.'}</p>
                                         </div>
                                     )}
@@ -297,7 +302,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             {/* Attachments */}
                             {activeLesson.attachments?.length > 0 && (
                                 <div className="mb-6 rounded-lg border border-border bg-card p-4">
-                                    <h3 className="mb-3 text-sm font-medium text-foreground">📎 Attachments</h3>
+                                    <h3 className="mb-3 text-sm font-medium text-foreground flex items-center gap-2"><Paperclip className="h-4 w-4" /> Attachments</h3>
                                     <div className="space-y-2">
                                         {activeLesson.attachments.map((att) => (
                                             <a key={att.id} href={`/storage/${att.path}`} className="flex items-center justify-between rounded-md border border-border p-3 hover:bg-muted transition-colors">
@@ -316,16 +321,20 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                             <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
                                 {prevLesson ? (
                                     <button onClick={() => setActiveLesson(prevLesson)} className="flex items-center gap-2 rounded-md border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                                        <ChevronLeft className="h-4 w-4" />
                                         Previous
                                     </button>
                                 ) : <div />}
                                 {nextLesson ? (
                                     <button onClick={() => setActiveLesson(nextLesson)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                                        Next <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                        Next
+                                        <ChevronRight className="h-4 w-4" />
                                     </button>
                                 ) : progress === 100 && (
-                                    <Link href={route('courses.my')} className="flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success/90">🎉 Course Complete!</Link>
+                                    <Link href={route('courses.my')} className="flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success/90">
+                                        <CheckCircle className="h-4 w-4" />
+                                        Course Complete!
+                                    </Link>
                                 )}
                             </div>
                         </div>
