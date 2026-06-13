@@ -178,10 +178,6 @@ class EnrollmentController extends Controller
             'properties' => ['lesson_title' => $lesson->title],
         ]);
 
-        if ($request->header('X-Inertia') || $request->wantsJson()) {
-            return response()->json(['message' => 'Lesson marked as complete!']);
-        }
-
         $course = $lesson->module->course;
 
         return redirect()->route('courses.learn', $course)->with('success', 'Lesson marked as complete!');
