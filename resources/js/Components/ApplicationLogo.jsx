@@ -6,22 +6,26 @@ export default function ApplicationLogo(props) {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
-            {/* Book spine */}
-            <rect x="160" y="190" width="50" height="240" rx="12" fill="currentColor" />
+            {/* Book body */}
+            <rect x="150" y="230" width="212" height="220" rx="14" fill="currentColor" opacity="0.9" />
 
-            {/* Book left page */}
-            <path d="M210 200c0-16-13-28-28-28H160v248h50V200z" fill="currentColor" opacity="0.5" />
+            {/* Pages visible at top edge */}
+            <rect x="164" y="220" width="184" height="16" rx="4" fill="currentColor" opacity="0.4" />
+            <rect x="158" y="225" width="196" height="12" rx="3" fill="currentColor" opacity="0.25" />
 
-            {/* Book right page */}
-            <path d="M300 170c-16 0-28 13-28 28v240h50V170h-22z" fill="currentColor" />
+            {/* Spine line */}
+            <rect x="150" y="230" width="18" height="220" rx="5" fill="currentColor" opacity="0.7" />
 
-            {/* Graduation cap */}
-            <path d="M246 130l110 56-110 55-110-55 110-56z" fill="currentColor" opacity="0.9" />
-            <path d="M246 130l110 56" stroke="currentColor" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
-            <path d="M125 185v56" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.8" />
+            {/* Mortarboard dome */}
+            <path d="M170 230 C170 140 342 140 342 230 Z" fill="currentColor" opacity="0.85" />
+
+            {/* Cap board */}
+            <rect x="120" y="218" width="272" height="18" rx="6" fill="currentColor" />
 
             {/* Tassel */}
-            <path d="M356 186v30l-24 28" stroke="currentColor" strokeWidth="5" strokeLinecap="round" opacity="0.5" />
+            <circle cx="392" cy="227" r="8" fill="currentColor" opacity="0.7" />
+            <path d="M392 235 L392 270" stroke="currentColor" strokeWidth="5" strokeLinecap="round" opacity="0.5" />
+            <path d="M392 270 L376 280" stroke="currentColor" strokeWidth="4" strokeLinecap="round" opacity="0.35" />
         </svg>
     );
 }
