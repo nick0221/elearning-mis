@@ -22,6 +22,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
+    const wasAlreadyComplete = useRef(progress >= 100);
     const [showShortcutsModal, setShowShortcutsModal] = useState(false);
     const [showTranscript, setShowTranscript] = useState(false);
     const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
@@ -100,9 +101,9 @@ export default function Learn({ course, enrollment, progress }: { course: Course
         }, 1500);
     };
 
-    // Show completion modal when progress hits 100%
+    // Show completion modal only when newly completed (not on repeat visits)
     useEffect(() => {
-        if (localProgress === 100 && completedCount > 0 && !showCompletionModal) {
+        if (localProgress === 100 && completedCount > 0 && !showCompletionModal && !wasAlreadyComplete.current) {
             const timer = setTimeout(() => setShowCompletionModal(true), 800);
             return () => clearTimeout(timer);
         }
