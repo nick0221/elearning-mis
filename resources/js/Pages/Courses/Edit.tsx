@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextEditor from '@/Components/RichTextEditor';
@@ -383,12 +384,14 @@ export default function Edit({ course, categories }: { course: Course; categorie
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Edit Course</h2>}
         >
             <Head title="Edit Course" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Edit Course"
+                    />
                     {/* Course Settings */}
                     <div className="bg-card shadow-sm sm:rounded-lg">
                         <form onSubmit={submit} className="p-6">

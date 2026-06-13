@@ -1,4 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
+import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 
@@ -18,14 +20,18 @@ interface PaginatedData {
     current_page: number;
     last_page: number;
     total: number;
+    links: Array<{ url: string | null; label: string; active: boolean }>;
 }
 
 export default function Index({ inbox, unreadCount }: { inbox: PaginatedData; unreadCount: number }) {
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">Messages</h2>}>
+        <AuthenticatedLayout >
             <Head title="Messages" />
             <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Messages"
+                    />
                     <div className="mb-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <h2 className="text-lg font-medium text-foreground">Inbox</h2>
@@ -75,6 +81,8 @@ export default function Index({ inbox, unreadCount }: { inbox: PaginatedData; un
                             </div>
                         </div>
                     )}
+
+                    <Pagination links={inbox.links} />
                 </div>
             </div>
         </AuthenticatedLayout>

@@ -244,7 +244,7 @@ class AssessmentController extends Controller
         ]);
 
         return Inertia::render('Assessments/Result', [
-            'assessment' => $assessment,
+            'assessment' => $assessment->load('course'),
             'submission' => $submission->load('answers.question.options'),
             'autoScore' => $autoScore,
             'totalPoints' => $totalPoints,

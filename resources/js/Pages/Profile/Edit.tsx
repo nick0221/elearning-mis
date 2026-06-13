@@ -20,7 +20,6 @@ function SectionCard({ icon, children }: { icon: React.ReactNode; children: Reac
 export default function Edit({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Profile</h2>}
         >
             <Head title="Profile" />
 

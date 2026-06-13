@@ -37,7 +37,7 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
     );
     const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-    const { post, processing } = useForm({
+    const { post, processing, transform } = useForm({
         submission_id: submission.id,
         answers: [] as any[],
     });
@@ -76,29 +76,14 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
             question_id: parseInt(questionId),
             ...answer,
         }));
-        post(route('assessments.submit', assessment.id), { answers: answersArray });
+        transform((data) => ({ ...data, answers: answersArray }));
+        post(route('assessments.submit', assessment.id));
     };
 
     const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold leading-tight text-foreground truncate">{assessment.title}</h2>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-muted-foreground">
-                            {answeredCount}/{assessment.questions.length} answered
-                        </span>
-                        {timeLeft !== null && (
-                            <span className={`rounded-md px-3 py-1 text-sm font-mono ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-foreground'}`}>
-                                {formatTime(timeLeft)}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title={`Take: ${assessment.title}`} />
 
             <div className="flex h-[calc(100vh-4rem)]">
@@ -149,6 +134,20 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
                 {/* Main Question Area */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="mx-auto max-w-2xl p-6 lg:p-8">
+                        {/* Assessment header with timer */}
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold leading-tight text-foreground truncate">{assessment.title}</h2>
+                            <div className="flex items-center gap-3 shrink-0">
+                                <span className="text-sm text-muted-foreground">
+                                    {answeredCount}/{assessment.questions.length} answered
+                                </span>
+                                {timeLeft !== null && (
+                                    <span className={`rounded-md px-3 py-1 text-sm font-mono ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-foreground'}`}>
+                                        {formatTime(timeLeft)}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                         <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
                             <span>Question {current + 1} of {assessment.questions.length}</span>
                             <div className="flex items-center gap-3">

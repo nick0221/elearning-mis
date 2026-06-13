@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link } from '@inertiajs/react';
 
 interface User { id: number; name: string; email: string; created_at: string; is_active: boolean; }
@@ -12,10 +13,13 @@ export default function Activity({ recentUsers, logins, roleDistribution }: {
     const maxRole = Math.max(...roleDistribution.map(r => r.count), 1);
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">Activity Reports</h2>}>
+        <AuthenticatedLayout >
             <Head title="Activity Reports" />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Activity Reports"
+                    />
                     <div className="flex gap-2">
                         <Link href={route('reports.index')} className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted">Overview</Link>
                         <Link href={route('reports.enrollments')} className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted">Enrollments</Link>

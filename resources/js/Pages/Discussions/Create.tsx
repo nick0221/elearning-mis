@@ -1,39 +1,99 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import PageHeader from '@/Components/PageHeader';
 
 interface Course { id: number; title: string; }
 
 export default function Create({ courses }: { courses: Course[] }) {
     const { data, setData, post, processing, errors } = useForm({ course_id: '', title: '', body: '' });
     const submit = (e: React.FormEvent) => { e.preventDefault(); post(route('discussions.store')); };
-    const inputClass = "mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring";
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">New Discussion</h2>}>
+        <AuthenticatedLayout>
             <Head title="New Discussion" />
+
             <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
-                    <div className="bg-card shadow-sm sm:rounded-lg">
-                        <form onSubmit={submit} className="p-6 space-y-4">
-                            <div>
+                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="New Discussion"
+                        section="Community"
+                        description="Start a conversation with your peers and instructors"
+                        breadcrumbs={[
+                            { label: 'Discussions', href: route('discussions.index') },
+                        ]}
+                    />
+
+                    <div className="rounded-xl border border-border bg-card shadow-sm">
+                        <form onSubmit={submit} className="p-6 space-y-5">
+                            <div className="space-y-2">
                                 <label className="block text-sm font-medium text-foreground">Course</label>
-                                <select value={data.course_id} onChange={(e) => setData('course_id', e.target.value)} className={inputClass}>
-                                    <option value="">Select course</option>
+                                <select
+                                    value={data.course_id}
+                                    onChange={(e) => setData('course_id', e.target.value)}
+                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                                >
+                                    <option value="">Select a course...</option>
                                     {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
                                 </select>
-                                {errors.course_id && <p className="mt-1 text-sm text-destructive">{errors.course_id}</p>}
+                                {errors.course_id && <p className="text-sm text-destructive">{errors.course_id}</p>}
                             </div>
-                            <div>
+
+                            <div className="space-y-2">
                                 <label className="block text-sm font-medium text-foreground">Title</label>
-                                <input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} className={inputClass} />
+                                <input
+                                    type="text"
+                                    value={data.title}
+                                    onChange={(e) => setData('title', e.target.value)}
+                                    placeholder="Give your discussion a clear, descriptive title"
+                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                                />
+                                {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
                             </div>
-                            <div>
+
+                            <div className="space-y-2">
                                 <label className="block text-sm font-medium text-foreground">Content</label>
-                                <textarea value={data.body} onChange={(e) => setData('body', e.target.value)} rows={6} className={inputClass} />
+                                <textarea
+                                    value={data.body}
+                                    onChange={(e) => setData('body', e.target.value)}
+                                    rows={6}
+                                    placeholder="Describe your question, idea, or topic in detail..."
+                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring resize-y min-h-[160px]"
+                                />
+                                <div className="flex justify-between items-center">
+                                    {errors.body && <p className="text-sm text-destructive">{errors.body}</p>}
+                                    <span className="ml-auto text-xs text-muted-foreground">{data.body.length}/5000</span>
+                                </div>
                             </div>
-                            <div className="flex justify-end gap-3">
-                                <Link href={route('discussions.index')} className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">Cancel</Link>
-                                <button type="submit" disabled={processing} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">Create</button>
+
+                            <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
+                                <Link
+                                    href={route('discussions.index')}
+                                    className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                                >
+                                    Cancel
+                                </Link>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                                >
+                                    {processing ? (
+                                        <>
+                                            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                            </svg>
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Create Discussion
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </form>
                     </div>

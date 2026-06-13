@@ -1,4 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
+import Pagination from '@/Components/Pagination';
 import { Head, Link } from '@inertiajs/react';
 
 interface Submission {
@@ -17,16 +19,19 @@ interface AvgScore {
     submission_count: number;
 }
 
-interface PaginatedData { data: Submission[]; current_page: number; last_page: number; total: number; }
+interface PaginatedData { data: Submission[]; current_page: number; last_page: number; total: number; links: Array<{ url: string | null; label: string; active: boolean }>; }
 
 export default function Performance({ submissions, avgScores }: { submissions: PaginatedData; avgScores: AvgScore[] }) {
     const maxAvg = Math.max(...avgScores.map(a => a.avg_score), 1);
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">Performance Reports</h2>}>
+        <AuthenticatedLayout >
             <Head title="Performance Reports" />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Performance Reports"
+                    />
                     <div className="flex gap-2">
                         <Link href={route('reports.index')} className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted">Overview</Link>
                         <Link href={route('reports.enrollments')} className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted">Enrollments</Link>
@@ -74,6 +79,8 @@ export default function Performance({ submissions, avgScores }: { submissions: P
                             </tbody>
                         </table>
                     </div>
+
+                    <Pagination links={submissions.links} />
                 </div>
             </div>
         </AuthenticatedLayout>

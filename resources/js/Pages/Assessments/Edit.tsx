@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -72,12 +73,14 @@ export default function Edit({ assessment }: { assessment: Assessment }) {
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Edit Assessment</h2>}
         >
             <Head title="Edit Assessment" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Edit Assessment"
+                    />
                     {/* Assessment Settings */}
                     <div className="bg-card shadow-sm sm:rounded-lg">
                         <form onSubmit={submit} className="p-6">

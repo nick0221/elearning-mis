@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
+import Pagination from '@/Components/Pagination';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -23,6 +24,7 @@ interface PaginatedData {
     current_page: number;
     last_page: number;
     total: number;
+    links: Array<{ url: string | null; label: string; active: boolean }>;
 }
 
 const typeConfig: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -68,7 +70,6 @@ export default function Index({ assessments, filters = {} }: { assessments: Pagi
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Assessments</h2>}
         >
             <Head title="Assessments" />
 
@@ -211,22 +212,7 @@ export default function Index({ assessments, filters = {} }: { assessments: Pagi
                         </div>
                     )}
 
-                    {/* Pagination */}
-                    {assessments.last_page > 1 && (
-                        <div className="flex justify-center gap-1">
-                            {Array.from({ length: assessments.last_page }, (_, i) => i + 1).map((page) => (
-                                <Link
-                                    key={page}
-                                    href={route('assessments.index', { page, search, type: filters.type })}
-                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                                        page === assessments.current_page ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/80'
-                                    }`}
-                                >
-                                    {page}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    <Pagination links={assessments.links} />
                 </div>
             </div>
         </AuthenticatedLayout>

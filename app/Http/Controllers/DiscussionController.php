@@ -26,10 +26,12 @@ class DiscussionController extends Controller
         }
 
         $discussions = $query->orderBy('is_pinned', 'desc')->latest()->paginate(15)->withQueryString();
+        $courses = Course::orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Discussions/Index', [
             'discussions' => $discussions,
             'filters' => $request->only(['search', 'course_id']),
+            'courses' => $courses,
         ]);
     }
 

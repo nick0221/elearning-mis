@@ -1,19 +1,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
+import Pagination from '@/Components/Pagination';
 import { Head, Link, router } from '@inertiajs/react';
 
 interface Course { id: number; title: string; }
 interface Enrollment { id: number; status: string; enrolled_at: string; user: { name: string; email: string }; course: { title: string }; }
 interface Trend { date: string; count: number; }
-interface PaginatedData { data: Enrollment[]; current_page: number; last_page: number; total: number; }
+interface PaginatedData { data: Enrollment[]; current_page: number; last_page: number; total: number; links: Array<{ url: string | null; label: string; active: boolean }>; }
 
 export default function Enrollments({ enrollments, trends, courses, filters }: {
     enrollments: PaginatedData; trends: Trend[]; courses: Course[]; filters: { course_id?: string; status?: string };
 }) {
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">Enrollment Reports</h2>}>
+        <AuthenticatedLayout >
             <Head title="Enrollment Reports" />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Enrollment Reports"
+                    />
                     <div className="flex gap-2">
                         <Link href={route('reports.index')} className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted">Overview</Link>
                         <Link href={route('reports.enrollments')} className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground">Enrollments</Link>
@@ -39,8 +44,10 @@ export default function Enrollments({ enrollments, trends, courses, filters }: {
                                     </div>
                                 );
                             })}
-                        </div>
                     </div>
+
+                    <Pagination links={enrollments.links} />
+                </div>
 
                     <div className="rounded-lg border border-border bg-card overflow-hidden">
                         <table className="min-w-full divide-y divide-border">

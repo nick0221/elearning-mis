@@ -418,7 +418,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                 <div className="mb-6">
                                     <div className="flex gap-1 border-b border-border">
                                         <button onClick={() => setActiveTab('content')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'content' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Content</button>
-                                        <button onClick={() => setActiveTab('notes')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'notes' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Notes {notes[activeLesson.id] && '📝'}</button>
+                                        <button onClick={() => setActiveTab('notes')} className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'notes' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground hover:text-foreground'}`}>Notes {notes[activeLesson.id] && <FileText className="ml-1 inline h-4 w-4 text-accent" />}</button>
                                     </div>
                                     {activeTab === 'content' && (
                                         <div id="lesson-content">

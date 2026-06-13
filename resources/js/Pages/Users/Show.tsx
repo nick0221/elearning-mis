@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -51,12 +52,14 @@ export default function Show({ user }: { user: User }) {
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">User Details</h2>}
         >
             <Head title="User Details" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="User Details"
+                    />
                     <div className="grid gap-6 lg:grid-cols-3">
                         {/* User Info Card */}
                         <div className="lg:col-span-2">

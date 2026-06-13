@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -156,12 +157,14 @@ export default function Create({ categories }: { categories: Category[] }) {
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Create Course</h2>}
         >
             <Head title="Create Course" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-3xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-3xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Create Course"
+                    />
                     {/* Steps Indicator */}
                     <div className="mb-8 flex items-center justify-center gap-0">
                         {STEPS.map((s, i) => (
@@ -178,7 +181,11 @@ export default function Create({ categories }: { categories: Category[] }) {
                                         i === step ? 'bg-accent text-accent-foreground ring-2 ring-accent' :
                                         'bg-muted text-muted-foreground cursor-not-allowed'
                                     )}>
-                                        {i < step ? '✓' : i + 1}
+                                        {i < step ? (
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        ) : i + 1}
                                     </div>
                                     <span className={cn(
                                         'hidden text-sm font-medium sm:inline',

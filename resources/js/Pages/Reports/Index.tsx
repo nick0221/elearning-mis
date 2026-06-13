@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link } from '@inertiajs/react';
 
 interface Stats {
@@ -60,10 +61,13 @@ export default function Index({ stats, enrollmentTrends, courseEnrollments, rece
     const totalRoleCount = roleDistribution.reduce((acc, r) => acc + r.count, 0);
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">Reports & Analytics</h2>}>
+        <AuthenticatedLayout >
             <Head title="Reports" />
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Reports & Analytics"
+                    />
                     {/* Tab Navigation */}
                     <div className="flex flex-wrap gap-2">
                         <Link href={route('reports.index')} className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground">Overview</Link>

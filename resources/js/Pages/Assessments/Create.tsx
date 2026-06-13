@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 interface Course {
@@ -26,12 +27,14 @@ export default function Create({ courses, courseId }: { courses: Course[]; cours
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Create Assessment</h2>}
         >
             <Head title="Create Assessment" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Create Assessment"
+                    />
                     <div className="bg-card shadow-sm sm:rounded-lg">
                         <form onSubmit={submit} className="p-6">
                             <div className="space-y-4">

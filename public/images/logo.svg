@@ -1,0 +1,33 @@
+<svg width="180" height="48" viewBox="0 0 180 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="E-Learning MIS">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="gl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#c4b5fd"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Book spine -->
+  <rect x="6" y="14" width="4" height="20" rx="1" fill="url(#g)"/>
+
+  <!-- Book left page -->
+  <path d="M10 14c0-1.1-.9-2-2-2H6v20h4V14z" fill="url(#gl)" opacity="0.6"/>
+
+  <!-- Book right page -->
+  <path d="M14 12c-1.1 0-2 .9-2 2v20h4V12h-2z" fill="url(#g)"/>
+
+  <!-- Graduation cap -->
+  <path d="M10 12l8 4-8 4-8-4 8-4z" fill="url(#g)" opacity="0.9"/>
+  <path d="M10 12l8 4" stroke="url(#gl)" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M4 14.5v4" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Tassel -->
+  <path d="M18 16v2l-1.5 2" stroke="url(#gl)" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Text -->
+  <text x="28" y="22" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="14" fill="url(#g)" letter-spacing="0.5">E-Learning</text>
+  <text x="28" y="36" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="11" fill="url(#gl)" letter-spacing="2.5">MANAGEMENT INFORMATION SYSTEM</text>
+</svg>

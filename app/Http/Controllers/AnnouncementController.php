@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,10 +17,20 @@ class AnnouncementController extends Controller
             $query->where('course_id', $courseId);
         }
 
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('body', 'like', "%{$search}%");
+            });
+        }
+
         $announcements = $query->latest('published_at')->paginate(15)->withQueryString();
+        $courses = Course::orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Announcements/Index', [
             'announcements' => $announcements,
+            'filters' => $request->only(['search', 'course_id']),
+            'courses' => $courses,
         ]);
     }
 

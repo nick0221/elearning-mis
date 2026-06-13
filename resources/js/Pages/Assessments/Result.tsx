@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link } from '@inertiajs/react';
 
 interface Answer {
@@ -43,12 +44,14 @@ export default function Result({ assessment, submission, autoScore, totalPoints,
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Result: {assessment.title}</h2>}
         >
             <Head title="Assessment Result" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title={`Result: ${assessment.title}`}
+                    />
                     {/* Score Card */}
                     <div className={`rounded-lg border p-8 text-center ${passed ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
                         <div className={`text-6xl font-bold ${passed ? 'text-success' : 'text-destructive'}`}>

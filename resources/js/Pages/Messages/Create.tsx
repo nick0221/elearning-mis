@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 interface User { id: number; name: string; }
@@ -13,10 +14,13 @@ export default function Create({ users, recipientId }: { users: User[]; recipien
     const inputClass = "mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring";
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">New Message</h2>}>
+        <AuthenticatedLayout >
             <Head title="New Message" />
             <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="New Message"
+                    />
                     <div className="bg-card shadow-sm sm:rounded-lg">
                         <form onSubmit={submit} className="p-6 space-y-4">
                             <div>

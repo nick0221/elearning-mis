@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, useForm } from '@inertiajs/react';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -53,10 +54,13 @@ export default function Index({ settings }: { settings: Record<string, Setting> 
     };
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">System Settings</h2>}>
+        <AuthenticatedLayout >
             <Head title="Settings" />
             <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="System Settings"
+                    />
                     <form onSubmit={submit} className="space-y-6">
                         {Object.entries(groups).map(([group, { label, description, items }]) => (
                             <div key={group} className="rounded-lg border border-border bg-card p-6">

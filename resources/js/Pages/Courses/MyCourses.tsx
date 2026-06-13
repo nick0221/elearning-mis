@@ -1,8 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
+import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Search, ArrowUpDown, ChevronLeft, ChevronRight, CheckCircle, Clock, BookOpen, LayoutGrid, List, Award, ArrowRight, ExternalLink, FilterX } from 'lucide-react';
+import { Search, ArrowUpDown, CheckCircle, Clock, BookOpen, LayoutGrid, List, Award, ArrowRight, ExternalLink, FilterX } from 'lucide-react';
 
 interface Category {
     id: number;
@@ -226,12 +228,14 @@ export default function MyCourses({ enrollments, filters, categories }: { enroll
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">My Courses</h2>}
         >
             <Head title="My Courses" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="My Courses"
+                    />
                     {/* Stats Summary */}
                     {enrollments.total > 0 && (
                         <div className="grid gap-4 sm:grid-cols-3">
@@ -377,55 +381,7 @@ export default function MyCourses({ enrollments, filters, categories }: { enroll
                                 {enrollments.data.map((enrollment) => renderCard(enrollment, viewMode === 'list'))}
                             </div>
 
-                            {/* Pagination */}
-                            {enrollments.last_page > 1 && (
-                                <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-                                    <span className="text-sm text-muted-foreground">
-                                        Showing {enrollments.from}–{enrollments.to} of {enrollments.total}
-                                    </span>
-                                    <div className="flex items-center gap-1">
-                                        {enrollments.links.map((link, i) => {
-                                            if (link.label.includes('Previous')) {
-                                                return (
-                                                    <Link
-                                                        key={i}
-                                                        href={link.url || '#'}
-                                                        disabled={!link.url}
-                                                        className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${link.url ? 'text-foreground hover:bg-muted' : 'pointer-events-none text-muted-foreground/50'}`}
-                                                        preserveState
-                                                    >
-                                                        <ChevronLeft className="h-4 w-4" /> Prev
-                                                    </Link>
-                                                );
-                                            }
-                                            if (link.label.includes('Next')) {
-                                                return (
-                                                    <Link
-                                                        key={i}
-                                                        href={link.url || '#'}
-                                                        disabled={!link.url}
-                                                        className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${link.url ? 'text-foreground hover:bg-muted' : 'pointer-events-none text-muted-foreground/50'}`}
-                                                        preserveState
-                                                    >
-                                                        Next <ChevronRight className="h-4 w-4" />
-                                                    </Link>
-                                                );
-                                            }
-                                            return (
-                                                <Link
-                                                    key={i}
-                                                    href={link.url || '#'}
-                                                    disabled={!link.url}
-                                                    className={`inline-flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-colors ${link.active ? 'bg-primary text-primary-foreground' : link.url ? 'text-foreground hover:bg-muted' : 'pointer-events-none text-muted-foreground/50'}`}
-                                                    preserveState
-                                                >
-                                                    {link.label}
-                                                </Link>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+                            <Pagination links={enrollments.links} from={enrollments.from} to={enrollments.to} total={enrollments.total} />
                         </>
                     )}
                 </div>

@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, router } from '@inertiajs/react';
 
 interface Sender { id: number; name: string; }
@@ -20,10 +21,13 @@ export default function Show({ message }: { message: Message }) {
     };
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold leading-tight text-foreground">{message.subject}</h2>}>
+        <AuthenticatedLayout >
             <Head title={message.subject} />
             <div className="py-12">
-                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-2xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title={message.subject}
+                    />
                     <div className="bg-card shadow-sm sm:rounded-lg p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <div>

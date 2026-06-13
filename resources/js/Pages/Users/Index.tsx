@@ -1,6 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
+import Pagination from '@/Components/Pagination';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -20,6 +22,7 @@ interface PaginatedData {
     last_page: number;
     per_page: number;
     total: number;
+    links: Array<{ url: string | null; label: string; active: boolean }>;
 }
 
 export default function Index({ users, filters }: { users: PaginatedData; filters: { search?: string; role?: string } }) {
@@ -50,12 +53,14 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Users</h2>}
         >
             <Head title="Users" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title="Users"
+                    />
                     <div className="mb-6 flex items-center justify-between">
                         <form onSubmit={handleSearch} className="flex gap-2">
                             <input
@@ -169,19 +174,7 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
                         </div>
                     )}
 
-                    {users.last_page > 1 && (
-                        <div className="mt-4 flex justify-center gap-1">
-                            {Array.from({ length: users.last_page }, (_, i) => i + 1).map((page) => (
-                                <Link
-                                    key={page}
-                                    href={route('users.index', { page, search, role: filters.role })}
-                                    className={`rounded-md px-3 py-2 text-sm ${page === users.current_page ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/80'}`}
-                                >
-                                    {page}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    <Pagination links={users.links} />
                 </div>
             </div>
         </AuthenticatedLayout>

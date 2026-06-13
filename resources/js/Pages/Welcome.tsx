@@ -1,5 +1,65 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { Head, Link } from '@inertiajs/react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+function useScrollReveal(threshold = 0.15) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [threshold]);
+
+    return { ref, visible };
+}
+
+function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+    const { ref, visible } = useScrollReveal(0.5);
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        if (!visible) return;
+        let start = 0;
+        const duration = 1200;
+        const step = Math.max(1, Math.floor(target / (duration / 16)));
+        const timer = setInterval(() => {
+            start += step;
+            if (start >= target) {
+                setCount(target);
+                clearInterval(timer);
+            } else {
+                setCount(start);
+            }
+        }, 16);
+        return () => clearInterval(timer);
+    }, [visible, target]);
+
+    return <span ref={ref} className="tabular-nums">{count}{suffix}</span>;
+}
+
+function RevealSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+    const { ref, visible } = useScrollReveal(0.1);
+    return (
+        <div
+            ref={ref}
+            className={`transition-all duration-700 ease-out ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} ${className}`}
+        >
+            {children}
+        </div>
+    );
+}
 
 const features = [
     {
@@ -87,7 +147,34 @@ const steps = [
     },
 ];
 
+const testimonials = [
+    {
+        quote: 'This platform transformed how we deliver training. The course builder is incredibly intuitive, and students love the clean interface.',
+        author: 'Dr. Sarah Chen',
+        role: 'Computer Science Professor',
+        initials: 'SC',
+    },
+    {
+        quote: 'The auto-grading and progress tracking save me hours every week. I can finally focus on teaching instead of administrative work.',
+        author: 'Marcus Johnson',
+        role: 'High School Teacher',
+        initials: 'MJ',
+    },
+    {
+        quote: 'As a student, I love how easy it is to track my progress. The certificate system keeps me motivated to complete courses.',
+        author: 'Elena Rodriguez',
+        role: 'Online Learner',
+        initials: 'ER',
+    },
+];
+
 export default function Welcome() {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const scrollTo = useCallback((id: string) => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
+
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-muted/30 to-background">
             <Head title="Welcome" />
@@ -99,30 +186,66 @@ export default function Welcome() {
                         <ApplicationLogo className="h-8 w-8 fill-current text-primary" />
                         <span className="text-base font-bold text-foreground">E-Learning MIS</span>
                     </Link>
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href={route('login')}
-                            className="rounded-lg px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                        >
-                            Sign in
-                        </Link>
-                        <Link
-                            href={route('register')}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
-                        >
-                            Get started
-                        </Link>
+                    {/* Desktop nav */}
+                    <div className="hidden items-center gap-6 sm:flex">
+                        <button onClick={() => scrollTo('features')} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Features</button>
+                        <button onClick={() => scrollTo('how-it-works')} className="text-sm text-muted-foreground transition-colors hover:text-foreground">How it works</button>
+                        <button onClick={() => scrollTo('testimonials')} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Testimonials</button>
+                        <div className="flex items-center gap-3">
+                            <Link
+                                href={route('login')}
+                                className="rounded-lg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                            >
+                                Sign in
+                            </Link>
+                            <Link
+                                href={route('register')}
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                            >
+                                Get started
+                            </Link>
+                        </div>
                     </div>
+                    {/* Mobile hamburger */}
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted sm:hidden"
+                        aria-label="Toggle menu"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {mobileMenuOpen ? (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            ) : (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                            )}
+                        </svg>
+                    </button>
                 </div>
+                {/* Mobile menu */}
+                {mobileMenuOpen && (
+                    <div className="border-t border-border/50 bg-background px-6 pb-4 pt-2 sm:hidden">
+                        <div className="flex flex-col gap-2">
+                            <button onClick={() => { scrollTo('features'); setMobileMenuOpen(false); }} className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted">Features</button>
+                            <button onClick={() => { scrollTo('how-it-works'); setMobileMenuOpen(false); }} className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted">How it works</button>
+                            <button onClick={() => { scrollTo('testimonials'); setMobileMenuOpen(false); }} className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted">Testimonials</button>
+                            <hr className="border-border" />
+                            <Link href={route('login')} className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted">Sign in</Link>
+                            <Link href={route('register')} className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground text-center">Get started</Link>
+                        </div>
+                    </div>
+                )}
             </nav>
 
             <main className="flex-1">
                 {/* Hero */}
                 <section className="relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-                    <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-                    <div className="absolute -right-32 top-32 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
-                    <div className="absolute bottom-0 left-1/2 h-px w-1/2 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <div className="absolute -left-32 -top-32 h-64 w-64 animate-pulse rounded-full bg-primary/10 blur-3xl" style={{ animationDuration: '4s' }} />
+                    <div className="absolute -right-32 top-32 h-64 w-64 animate-pulse rounded-full bg-accent/10 blur-3xl" style={{ animationDuration: '6s' }} />
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+                    {/* Dot grid background */}
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
                     <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-20 text-center sm:px-10 sm:pt-28">
                         <div className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-muted/80 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-sm">
@@ -146,7 +269,7 @@ export default function Welcome() {
                         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                             <Link
                                 href={route('register')}
-                                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all"
+                                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-primary/30"
                             >
                                 Start learning free
                                 <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,130 +277,196 @@ export default function Welcome() {
                                 </svg>
                             </Link>
                             <Link
-                                href={route('login')}
-                                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted transition-colors"
+                                href={route('courses.index')}
+                                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-3.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
                             >
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                Sign in
+                                Browse courses
                             </Link>
                         </div>
                     </div>
                 </section>
 
                 {/* Stats */}
-                <section className="mx-auto max-w-5xl px-6 pb-20 sm:px-10">
-                    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4">
-                        {[
-                            { value: '50+', label: 'Courses' },
-                            { value: '1K+', label: 'Students' },
-                            { value: '10+', label: 'Instructors' },
-                            { value: '95%', label: 'Satisfaction' },
-                        ].map((stat, i) => (
-                            <div key={i} className="flex flex-col items-center justify-center bg-card px-6 py-8">
-                                <span className="text-3xl font-bold text-foreground">{stat.value}</span>
-                                <span className="mt-1 text-xs font-medium text-muted-foreground">{stat.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Features */}
-                <section className="border-t border-border/50 bg-muted/20 py-20">
-                    <div className="mx-auto max-w-6xl px-6 sm:px-10">
-                        <div className="mx-auto max-w-2xl text-center">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                                Everything you need
-                            </span>
-                            <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl">Built for modern learning</h2>
-                            <p className="mt-3 text-muted-foreground">
-                                A complete platform that empowers instructors, engages students, and simplifies administration.
-                            </p>
-                        </div>
-                        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {features.map((feature, i) => {
-                                const c = colorMap[feature.color] ?? colorMap.primary;
-                                return (
-                                    <div
-                                        key={i}
-                                        className="group rounded-xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/30"
-                                    >
-                                        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${c.bg} ${c.text} transition-transform group-hover:scale-110`}>
-                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                {feature.icon}
-                                            </svg>
-                                        </div>
-                                        <h3 className="mt-4 font-semibold text-foreground">{feature.title}</h3>
-                                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </section>
-
-                {/* How It Works */}
-                <section className="py-20">
-                    <div className="mx-auto max-w-6xl px-6 sm:px-10">
-                        <div className="mx-auto max-w-2xl text-center">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                                Simple workflow
-                            </span>
-                            <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl">How it works</h2>
-                            <p className="mt-3 text-muted-foreground">
-                                Three simple steps to transform your educational experience.
-                            </p>
-                        </div>
-                        <div className="mt-12 grid gap-8 md:grid-cols-3">
-                            {steps.map((step, i) => (
-                                <div key={i} className="relative text-center">
-                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all hover:bg-primary/20">
-                                        <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            {step.icon}
-                                        </svg>
-                                    </div>
-                                    <div className="mt-4 mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                                        {step.number}
-                                    </div>
-                                    <h3 className="mt-3 font-semibold text-foreground">{step.title}</h3>
-                                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                <RevealSection>
+                    <section className="mx-auto max-w-5xl px-6 pb-20 sm:px-10">
+                        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4">
+                            {[
+                                { target: 50, suffix: '+', label: 'Courses' },
+                                { target: 1000, suffix: '+', label: 'Students' },
+                                { target: 10, suffix: '+', label: 'Instructors' },
+                                { target: 95, suffix: '%', label: 'Satisfaction' },
+                            ].map((stat, i) => (
+                                <div key={i} className="flex flex-col items-center justify-center bg-card px-6 py-10 transition-colors hover:bg-muted/30">
+                                    <span className="text-4xl font-bold text-foreground">
+                                        <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                                    </span>
+                                    <span className="mt-1.5 text-xs font-medium text-muted-foreground">{stat.label}</span>
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </section>
+                </RevealSection>
+
+                {/* Features */}
+                <section id="features" className="border-t border-border/50 bg-muted/20 py-20">
+                    <RevealSection>
+                        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+                            <div className="mx-auto max-w-2xl text-center">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Everything you need
+                                </span>
+                                <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl">Built for modern learning</h2>
+                                <p className="mt-3 text-muted-foreground">
+                                    A complete platform that empowers instructors, engages students, and simplifies administration.
+                                </p>
+                            </div>
+                            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                {features.map((feature, i) => {
+                                    const c = colorMap[feature.color] ?? colorMap.primary;
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="group rounded-xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-lg"
+                                        >
+                                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${c.bg} ${c.text} transition-transform group-hover:scale-110`}>
+                                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    {feature.icon}
+                                                </svg>
+                                            </div>
+                                            <h3 className="mt-4 font-semibold text-foreground">{feature.title}</h3>
+                                            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </RevealSection>
+                </section>
+
+                {/* How It Works */}
+                <section id="how-it-works" className="py-20">
+                    <RevealSection>
+                        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+                            <div className="mx-auto max-w-2xl text-center">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                    Simple workflow
+                                </span>
+                                <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl">How it works</h2>
+                                <p className="mt-3 text-muted-foreground">
+                                    Three simple steps to transform your educational experience.
+                                </p>
+                            </div>
+                            <div className="mt-12 grid gap-8 md:grid-cols-3">
+                                {steps.map((step, i) => (
+                                    <div key={i} className="group relative text-center">
+                                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all group-hover:bg-primary/20 group-hover:scale-110">
+                                            <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                {step.icon}
+                                            </svg>
+                                        </div>
+                                        <div className="mx-auto mt-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground transition-transform group-hover:scale-110">
+                                            {step.number}
+                                        </div>
+                                        <h3 className="mt-3 font-semibold text-foreground">{step.title}</h3>
+                                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                                        {i < steps.length - 1 && (
+                                            <div className="absolute right-0 top-8 hidden md:block">
+                                                <svg className="h-6 w-6 text-muted-foreground/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </RevealSection>
+                </section>
+
+                {/* Testimonials */}
+                <section id="testimonials" className="border-t border-border/50 bg-muted/20 py-20">
+                    <RevealSection>
+                        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+                            <div className="mx-auto max-w-2xl text-center">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-info/10 px-3 py-1 text-xs font-semibold text-info">
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    Testimonials
+                                </span>
+                                <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl">Loved by educators & learners</h2>
+                                <p className="mt-3 text-muted-foreground">
+                                    Hear from the community using E-Learning MIS every day.
+                                </p>
+                            </div>
+                            <div className="mt-12 grid gap-6 md:grid-cols-3">
+                                {testimonials.map((t, i) => (
+                                    <div key={i} className="group relative rounded-xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-lg">
+                                        <svg className="mb-4 h-8 w-8 text-accent/30" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                                        </svg>
+                                        <p className="text-sm leading-relaxed text-muted-foreground">{t.quote}</p>
+                                        <div className="mt-6 flex items-center gap-3 border-t border-border pt-4">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                                {t.initials}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-foreground">{t.author}</div>
+                                                <div className="text-xs text-muted-foreground">{t.role}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </RevealSection>
                 </section>
 
                 {/* CTA */}
                 <section className="relative overflow-hidden border-t border-border/50 py-20">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5" />
                     <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
-                    <div className="relative mx-auto max-w-3xl px-6 text-center sm:px-10">
-                        <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-                            Ready to get started?
-                        </h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Join thousands of students and instructors already using E-Learning MIS.
-                            Create your account today — it&apos;s free.
-                        </p>
-                        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                            <Link
-                                href={route('register')}
-                                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90 hover:-translate-y-0.5 transition-all"
-                            >
-                                Create free account
-                                <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                            </Link>
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+                    <RevealSection>
+                        <div className="relative mx-auto max-w-3xl px-6 text-center sm:px-10">
+                            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+                                Ready to get started?
+                            </h2>
+                            <p className="mt-4 text-lg text-muted-foreground">
+                                Join thousands of students and instructors already using E-Learning MIS.
+                                Create your account today — it&apos;s free.
+                            </p>
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                                <Link
+                                    href={route('register')}
+                                    className="group inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary/90"
+                                >
+                                    Create free account
+                                    <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                </Link>
+                                <button
+                                    onClick={() => scrollTo('features')}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-3.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+                                >
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                    Learn more
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    </RevealSection>
                 </section>
             </main>
 
@@ -300,7 +489,7 @@ export default function Welcome() {
                             <ul className="mt-4 space-y-2.5">
                                 {['Courses', 'Assessments', 'Reports', 'Certificates'].map((item) => (
                                     <li key={item}>
-                                        <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default">{item}</span>
+                                        <span className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-default">{item}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -310,7 +499,7 @@ export default function Welcome() {
                             <ul className="mt-4 space-y-2.5">
                                 {['About', 'Blog', 'Contact', 'Privacy'].map((item) => (
                                     <li key={item}>
-                                        <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default">{item}</span>
+                                        <span className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-default">{item}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -322,7 +511,7 @@ export default function Welcome() {
                         </p>
                         <div className="flex items-center gap-4">
                             {['Twitter', 'GitHub', 'LinkedIn'].map((name) => (
-                                <span key={name} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-default">
+                                <span key={name} className="text-xs text-muted-foreground transition-colors hover:text-foreground cursor-default">
                                     {name}
                                 </span>
                             ))}

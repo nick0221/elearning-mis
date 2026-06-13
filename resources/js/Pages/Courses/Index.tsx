@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Head, Link, router } from '@inertiajs/react';
+import Pagination from '@/Components/Pagination';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -35,6 +36,7 @@ interface PaginatedData {
     current_page: number;
     last_page: number;
     total: number;
+    links: Array<{ url: string | null; label: string; active: boolean }>;
 }
 
 export default function Index({ courses, categories, filters }: { courses: PaginatedData; categories: Category[]; filters: { search?: string; status?: string; category_id?: string; sort?: string } }) {
@@ -90,7 +92,6 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Course Catalog</h2>}
         >
             <Head title="Course Catalog" />
 
@@ -325,20 +326,7 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
                         </div>
                     )}
 
-                    {/* Pagination */}
-                    {courses.last_page > 1 && (
-                        <div className="mt-8 flex justify-center gap-1">
-                            {Array.from({ length: courses.last_page }, (_, i) => i + 1).map((page) => (
-                                <Link
-                                    key={page}
-                                    href={route('courses.index', { page, search, status: filters.status, category_id: filters.category_id, sort: filters.sort })}
-                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${page === courses.current_page ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/80'}`}
-                                >
-                                    {page}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    <Pagination links={courses.links} />
                 </div>
             </div>
         </AuthenticatedLayout>

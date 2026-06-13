@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PageHeader from '@/Components/PageHeader';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
@@ -62,12 +63,14 @@ export default function Grade({ assessment, submission }: {
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-foreground">Grade: {assessment.title}</h2>}
         >
             <Head title="Grade Submission" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+                    <PageHeader
+                        title={`Grade: ${assessment.title}`}
+                    />
                     {/* Student Info */}
                     <div className="bg-card shadow-sm sm:rounded-lg p-6">
                         <div className="flex items-center justify-between">
