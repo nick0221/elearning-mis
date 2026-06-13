@@ -68,10 +68,22 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
         advanced: 'bg-destructive/10 text-destructive',
     };
 
-    const difficultyIcons: Record<string, string> = {
-        beginner: '🌱',
-        intermediate: '📈',
-        advanced: '🚀',
+    const difficultyIcons: Record<string, React.ReactNode> = {
+        beginner: (
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        ),
+        intermediate: (
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        ),
+        advanced: (
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        ),
     };
 
     const hasFilters = filters.search || filters.status || filters.category_id;

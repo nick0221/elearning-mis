@@ -80,6 +80,8 @@ class AssessmentController extends Controller
 
     public function update(Request $request, Assessment $assessment)
     {
+        $this->authorize('update', $assessment);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:quiz,assignment',
@@ -196,6 +198,11 @@ class AssessmentController extends Controller
         ]);
 
         $submission = Submission::findOrFail($validated['submission_id']);
+
+        if ($submission->user_id !== $request->user()->id) {
+            return back()->with('error', 'This submission does not belong to you.');
+        }
+
         $autoScore = 0;
 
         foreach ($validated['answers'] as $answerData) {

@@ -24,12 +24,36 @@ export default function Index({ stats, enrollmentTrends, courseEnrollments, rece
     roleDistribution: RoleDistribution[];
 }) {
     const statCards = [
-        { label: 'Total Users', value: stats.total_users, icon: '👥', color: 'text-primary' },
-        { label: 'Published Courses', value: stats.total_courses, icon: '📚', color: 'text-accent-foreground' },
-        { label: 'Total Enrollments', value: stats.total_enrollments, icon: '📝', color: 'text-info' },
-        { label: 'Completion Rate', value: `${stats.completion_rate}%`, icon: '✅', color: 'text-success' },
-        { label: 'Avg Score', value: stats.avg_score ? Math.round(stats.avg_score) : 0, icon: '📊', color: 'text-warning' },
-        { label: 'Submissions', value: stats.total_submissions, icon: '📋', color: 'text-info' },
+        {
+            label: 'Total Users', value: stats.total_users,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+            color: 'text-primary', bg: 'bg-primary/10',
+        },
+        {
+            label: 'Published Courses', value: stats.total_courses,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
+            color: 'text-accent', bg: 'bg-accent/10',
+        },
+        {
+            label: 'Total Enrollments', value: stats.total_enrollments,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+            color: 'text-info', bg: 'bg-info/10',
+        },
+        {
+            label: 'Completion Rate', value: `${stats.completion_rate}%`,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            color: 'text-success', bg: 'bg-success/10',
+        },
+        {
+            label: 'Avg Score', value: stats.avg_score ? Math.round(stats.avg_score) : 0,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+            color: 'text-warning', bg: 'bg-warning/10',
+        },
+        {
+            label: 'Submissions', value: stats.total_submissions,
+            icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+            color: 'text-info', bg: 'bg-info/10',
+        },
     ];
 
     const maxEnrollments = Math.max(...courseEnrollments.map(c => c.count), 1);
@@ -51,12 +75,14 @@ export default function Index({ stats, enrollmentTrends, courseEnrollments, rece
                     {/* Stats Cards */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {statCards.map((s) => (
-                            <div key={s.label} className="rounded-lg border border-border bg-card p-4">
+                            <div key={s.label} className="group rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:-translate-y-0.5">
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm text-muted-foreground">{s.label}</p>
-                                    <span className="text-xl">{s.icon}</span>
+                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.bg} ${s.color} transition-transform group-hover:scale-110`}>
+                                        {s.icon}
+                                    </div>
                                 </div>
-                                <p className={`mt-1 text-3xl font-bold ${s.color}`}>{s.value.toLocaleString()}</p>
+                                <p className={`mt-3 text-3xl font-bold ${s.color} tabular-nums`}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</p>
                             </div>
                         ))}
                     </div>

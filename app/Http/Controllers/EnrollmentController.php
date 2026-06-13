@@ -178,7 +178,29 @@ class EnrollmentController extends Controller
             'properties' => ['lesson_title' => $lesson->title],
         ]);
 
-        $course = $lesson->module->course;
+        $course = Course::with(['modules.lessons.lessonCompletions' => function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        }])->find($lesson->module->course_id);
+
+        $enrollment = Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->first();
+
+        if ($enrollment && $enrollment->status !== 'completed') {
+            $allLessons = $course->modules->flatMap(fn ($m) => $m->lessons);
+            $total = $allLessons->count();
+            $completed = $allLessons->filter(fn ($l) => $l->lessonCompletions->isNotEmpty())->count();
+
+            if ($total > 0 && $completed >= $total) {
+                $enrollment->update(['status' => 'completed', 'completed_at' => now()]);
+
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'course_completed',
+                    'subject_type' => Course::class,
+                    'subject_id' => $course->id,
+                    'properties' => ['course_title' => $course->title],
+                ]);
+            }
+        }
 
         return redirect()->route('courses.learn', $course)->with('success', 'Lesson marked as complete!');
     }
