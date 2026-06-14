@@ -40,6 +40,17 @@ interface EnrolledCourse {
     progress: number;
 }
 
+interface RecommendedCourse {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnail?: string;
+    difficulty: string;
+    description?: string;
+    category?: string;
+    enrollments_count: number;
+}
+
 function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: number; label: string; color: string }) {
     const colorMap: Record<string, { bg: string; icon: string }> = {
         primary: { bg: 'bg-primary/10', icon: 'text-primary' },
@@ -63,13 +74,14 @@ function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value:
 }
 
 export default function Dashboard({
-    stats, recentEnrollments, recentCompletions, courses, enrolledCourses,
+    stats, recentEnrollments, recentCompletions, courses, enrolledCourses, recommendedCourses,
 }: {
     stats?: Record<string, number>;
     recentEnrollments?: Enrollment[];
     recentCompletions?: Completion[];
     courses?: CourseStat[];
     enrolledCourses?: EnrolledCourse[];
+    recommendedCourses?: RecommendedCourse[];
 }) {
     const { user } = usePage().props.auth;
     const { isSuperAdmin, isInstructor, isStudent } = usePermission();
@@ -325,6 +337,59 @@ export default function Dashboard({
                                         </Link>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Student: Recommended Courses */}
+                    {isStudent() && recommendedCourses && recommendedCourses.length > 0 && (
+                        <div className="rounded-xl border border-border bg-card p-6">
+                            <div className="mb-4 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <svg className="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    <h3 className="text-lg font-medium text-foreground">Recommended for You</h3>
+                                </div>
+                                <Link href={route('courses.index')} className="text-sm font-medium text-accent hover:text-accent/80 transition-colors">Browse All</Link>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {recommendedCourses.map((rc) => (
+                                    <Link
+                                        key={rc.id}
+                                        href={route('courses.show', rc.id)}
+                                        className="group block overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/50"
+                                    >
+                                        {rc.thumbnail ? (
+                                            <img src={rc.thumbnail} alt={rc.title} className="h-36 w-full object-cover" />
+                                        ) : (
+                                            <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 text-3xl font-bold text-accent">
+                                                {rc.title.charAt(0)}
+                                            </div>
+                                        )}
+                                        <div className="p-4">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                                                    rc.difficulty === 'beginner' ? 'bg-success/10 text-success' :
+                                                    rc.difficulty === 'intermediate' ? 'bg-info/10 text-info' :
+                                                    'bg-destructive/10 text-destructive'
+                                                }`}>
+                                                    {rc.difficulty}
+                                                </span>
+                                                {rc.category && (
+                                                    <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                                        {rc.category}
+                                                    </span>
+                                                )}
+                                                <span className="text-xs text-muted-foreground ml-auto">{rc.enrollments_count} enrolled</span>
+                                            </div>
+                                            <h4 className="font-semibold text-foreground group-hover:text-accent transition-colors truncate">
+                                                {rc.title}
+                                            </h4>
+                                            {rc.description && (
+                                                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{rc.description}</p>
+                                            )}
+                                        </div>
+                                    </Link>
+                                ))}
                             </div>
                         </div>
                     )}

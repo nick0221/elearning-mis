@@ -96,6 +96,48 @@ class DashboardController extends Controller
                 ->latest()
                 ->take(10)
                 ->get();
+
+            // Course recommendations based on enrolled category overlap
+            $enrolledCourseIds = $enrolled->pluck('course_id');
+            $categoryIds = Course::whereIn('id', $enrolledCourseIds)
+                ->whereNotNull('category_id')
+                ->pluck('category_id')
+                ->unique();
+
+            $recommended = Course::with('category')
+                ->whereNotIn('id', $enrolledCourseIds)
+                ->where('status', 'published')
+                ->where(function ($q) use ($categoryIds) {
+                    if ($categoryIds->isNotEmpty()) {
+                        $q->whereIn('category_id', $categoryIds);
+                    }
+                })
+                ->withCount('enrollments')
+                ->orderByDesc('enrollments_count')
+                ->take(6)
+                ->get();
+
+            // Fallback: popular courses if no category overlap
+            if ($recommended->isEmpty()) {
+                $recommended = Course::with('category')
+                    ->whereNotIn('id', $enrolledCourseIds)
+                    ->where('status', 'published')
+                    ->withCount('enrollments')
+                    ->orderByDesc('enrollments_count')
+                    ->take(6)
+                    ->get();
+            }
+
+            $data['recommendedCourses'] = $recommended->map(fn ($c) => [
+                'id' => $c->id,
+                'title' => $c->title,
+                'slug' => $c->slug,
+                'thumbnail' => $c->thumbnail,
+                'difficulty' => $c->difficulty,
+                'description' => $c->description,
+                'category' => $c->category?->name,
+                'enrollments_count' => $c->enrollments_count,
+            ]);
         }
 
         return Inertia::render('Dashboard', $data);
