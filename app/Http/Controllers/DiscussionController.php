@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Discussion;
+use App\Notifications\DiscussionReplied;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -88,7 +89,7 @@ class DiscussionController extends Controller
             'parent_id' => 'nullable|exists:discussion_replies,id',
         ]);
 
-        $discussion->replies()->create([
+        $reply = $discussion->replies()->create([
             'user_id' => $request->user()->id,
             'body' => $validated['body'],
             'parent_id' => $validated['parent_id'] ?? null,
@@ -101,6 +102,12 @@ class DiscussionController extends Controller
             'subject_id' => $discussion->id,
             'properties' => ['discussion_title' => $discussion->title],
         ]);
+
+        if ($discussion->user_id !== $request->user()->id) {
+            $discussion->user->notify(
+                new DiscussionReplied($discussion, $reply, $request->user())
+            );
+        }
 
         return back()->with('success', 'Reply posted.');
     }

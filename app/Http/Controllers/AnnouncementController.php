@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\Course;
+use App\Notifications\NewAnnouncement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -46,7 +47,17 @@ class AnnouncementController extends Controller
         $validated['user_id'] = $request->user()->id;
         $validated['published_at'] = now();
 
-        Announcement::create($validated);
+        $announcement = Announcement::create($validated);
+
+        if ($announcement->course_id) {
+            $announcement->course->enrollments()
+                ->with('user')
+                ->where('status', 'enrolled')
+                ->get()
+                ->each(fn ($enrollment) => $enrollment->user->notify(
+                    new NewAnnouncement($announcement, $request->user())
+                ));
+        }
 
         return back()->with('success', 'Announcement posted.');
     }

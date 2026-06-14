@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextContent from '@/Components/RichTextContent';
+import { Textarea } from '@/Components/ui/textarea';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { Video, Headphones, FileText, Bookmark, BookmarkCheck, Share2, Printer, Moon, Sun, CheckCircle, Lock, Paperclip, ChevronLeft, ChevronRight, FileCode, HelpCircle, Award, MessageSquare, Clock, Zap, ArrowRight, ChevronDown, ChevronUp, Circle, Download, Timer } from 'lucide-react';
@@ -430,7 +431,7 @@ export default function Learn({ course, enrollment, progress }: { course: Course
                                     {activeTab === 'notes' && (
                                         <div className="mt-4 rounded-lg border border-border bg-card p-6">
                                             <p className="text-sm text-muted-foreground mb-2">Your notes (auto-saved):</p>
-                                            <textarea value={notes[activeLesson.id] || ''} onChange={(e) => setNotes((p) => ({ ...p, [activeLesson.id]: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" rows={8} placeholder="Write your notes here..." />
+                                            <Textarea value={notes[activeLesson.id] || ''} onChange={(e) => setNotes((p) => ({ ...p, [activeLesson.id]: e.target.value }))} rows={8} placeholder="Write your notes here..." />
                                         </div>
                                     )}
                                 </div>

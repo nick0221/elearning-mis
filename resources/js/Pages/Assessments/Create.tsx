@@ -1,5 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
+import { Input } from '@/Components/ui/input';
+import { Select } from '@/Components/ui/select';
+import { Label } from '@/Components/ui/label';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 interface Course {
@@ -23,8 +26,6 @@ export default function Create({ courses, courseId }: { courses: Course[]; cours
         post(route('assessments.store'));
     };
 
-    const inputClass = "mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring";
-
     return (
         <AuthenticatedLayout
         >
@@ -39,46 +40,46 @@ export default function Create({ courses, courseId }: { courses: Course[]; cours
                         <form onSubmit={submit} className="p-6">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Course</label>
-                                    <select value={data.course_id} onChange={(e) => setData('course_id', e.target.value)} className={inputClass}>
+                                    <Label>Course</Label>
+                                    <Select value={data.course_id} onChange={(e) => setData('course_id', e.target.value)}>
                                         <option value="">Select course</option>
                                         {courses.map((c) => (
                                             <option key={c.id} value={c.id}>{c.title}</option>
                                         ))}
-                                    </select>
+                                    </Select>
                                     {errors.course_id && <p className="mt-1 text-sm text-destructive">{errors.course_id}</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Title</label>
-                                    <input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} className={inputClass} />
+                                    <Label>Title</Label>
+                                    <Input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} />
                                     {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title}</p>}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Type</label>
-                                        <select value={data.type} onChange={(e) => setData('type', e.target.value)} className={inputClass}>
+                                        <Label>Type</Label>
+                                        <Select value={data.type} onChange={(e) => setData('type', e.target.value)}>
                                             <option value="quiz">Quiz</option>
                                             <option value="assignment">Assignment</option>
-                                        </select>
+                                        </Select>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Max Attempts</label>
-                                        <input type="number" value={data.max_attempts} onChange={(e) => setData('max_attempts', e.target.value)} className={inputClass} min="1" />
+                                        <Label>Max Attempts</Label>
+                                        <Input type="number" value={data.max_attempts} onChange={(e) => setData('max_attempts', e.target.value)} min="1" />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Time Limit (minutes)</label>
-                                        <input type="number" value={data.time_limit_minutes} onChange={(e) => setData('time_limit_minutes', e.target.value)} className={inputClass} min="1" placeholder="No limit" />
+                                        <Label>Time Limit (minutes)</Label>
+                                        <Input type="number" value={data.time_limit_minutes} onChange={(e) => setData('time_limit_minutes', e.target.value)} min="1" placeholder="No limit" />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Passing Score (%)</label>
-                                        <input type="number" value={data.passing_score} onChange={(e) => setData('passing_score', e.target.value)} className={inputClass} min="0" max="100" />
+                                        <Label>Passing Score (%)</Label>
+                                        <Input type="number" value={data.passing_score} onChange={(e) => setData('passing_score', e.target.value)} min="0" max="100" />
                                     </div>
                                 </div>
 

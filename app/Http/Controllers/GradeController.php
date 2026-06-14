@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\Assessment;
 use App\Models\Submission;
+use App\Notifications\SubmissionGraded;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -71,6 +72,11 @@ class GradeController extends Controller
                 'max_score' => $maxScore,
             ],
         ]);
+
+        $submission->load('user');
+        $submission->user->notify(
+            new SubmissionGraded($assessment, $submission->grade)
+        );
 
         return redirect()->route('assessments.show', $assessment)
             ->with('success', 'Submission graded successfully.');

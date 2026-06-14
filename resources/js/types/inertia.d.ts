@@ -9,5 +9,6 @@ declare module '@inertiajs/core' {
             success: string | null;
             error: string | null;
         };
+        unreadNotificationsCount: number;
     }
 }

@@ -1,5 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
+import { Input } from '@/Components/ui/input';
+import { Textarea } from '@/Components/ui/textarea';
+import { Select } from '@/Components/ui/select';
+import { Label } from '@/Components/ui/label';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -69,8 +73,6 @@ export default function Edit({ assessment }: { assessment: Assessment }) {
         });
     };
 
-    const inputClass = "mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring";
-
     return (
         <AuthenticatedLayout
         >
@@ -87,30 +89,30 @@ export default function Edit({ assessment }: { assessment: Assessment }) {
                             <h3 className="mb-4 text-lg font-medium text-foreground">Assessment Settings</h3>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Title</label>
-                                    <input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} className={inputClass} />
+                                    <Label>Title</Label>
+                                    <Input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Type</label>
-                                        <select value={data.type} onChange={(e) => setData('type', e.target.value)} className={inputClass}>
+                                        <Label>Type</Label>
+                                        <Select value={data.type} onChange={(e) => setData('type', e.target.value)}>
                                             <option value="quiz">Quiz</option>
                                             <option value="assignment">Assignment</option>
-                                        </select>
+                                        </Select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Max Attempts</label>
-                                        <input type="number" value={data.max_attempts} onChange={(e) => setData('max_attempts', e.target.value)} className={inputClass} min="1" />
+                                        <Label>Max Attempts</Label>
+                                        <Input type="number" value={data.max_attempts} onChange={(e) => setData('max_attempts', e.target.value)} min="1" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Time Limit (min)</label>
-                                        <input type="number" value={data.time_limit_minutes} onChange={(e) => setData('time_limit_minutes', e.target.value)} className={inputClass} placeholder="No limit" />
+                                        <Label>Time Limit (min)</Label>
+                                        <Input type="number" value={data.time_limit_minutes} onChange={(e) => setData('time_limit_minutes', e.target.value)} placeholder="No limit" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Passing Score (%)</label>
-                                        <input type="number" value={data.passing_score} onChange={(e) => setData('passing_score', e.target.value)} className={inputClass} min="0" max="100" />
+                                        <Label>Passing Score (%)</Label>
+                                        <Input type="number" value={data.passing_score} onChange={(e) => setData('passing_score', e.target.value)} min="0" max="100" />
                                     </div>
                                 </div>
                                 <div className="flex items-center">
@@ -162,20 +164,20 @@ export default function Edit({ assessment }: { assessment: Assessment }) {
                             <h3 className="mb-4 text-lg font-medium text-foreground">Add Question</h3>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Question</label>
-                                    <textarea value={newQuestion.body} onChange={(e) => setNewQuestion({ ...newQuestion, body: e.target.value })} rows={2} className={inputClass} required />
+                                    <Label>Question</Label>
+                                    <Textarea value={newQuestion.body} onChange={(e) => setNewQuestion({ ...newQuestion, body: e.target.value })} rows={2} required />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Type</label>
-                                        <select value={newQuestion.type} onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value })} className={inputClass}>
+                                        <Label>Type</Label>
+                                        <Select value={newQuestion.type} onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value })}>
                                             <option value="mcq">Multiple Choice</option>
                                             <option value="true_false">True/False</option>
-                                        </select>
+                                        </Select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Points</label>
-                                        <input type="number" value={newQuestion.points} onChange={(e) => setNewQuestion({ ...newQuestion, points: e.target.value })} className={inputClass} min="1" />
+                                        <Label>Points</Label>
+                                        <Input type="number" value={newQuestion.points} onChange={(e) => setNewQuestion({ ...newQuestion, points: e.target.value })} min="1" />
                                     </div>
                                 </div>
 
@@ -200,8 +202,8 @@ export default function Edit({ assessment }: { assessment: Assessment }) {
                                 )}
 
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Explanation (optional)</label>
-                                    <input type="text" value={newQuestion.explanation} onChange={(e) => setNewQuestion({ ...newQuestion, explanation: e.target.value })} className={inputClass} />
+                                    <Label>Explanation (optional)</Label>
+                                    <Input type="text" value={newQuestion.explanation} onChange={(e) => setNewQuestion({ ...newQuestion, explanation: e.target.value })} />
                                 </div>
                             </div>
                             <div className="mt-4 flex justify-end">

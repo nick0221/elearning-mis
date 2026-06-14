@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonCompletion;
+use App\Notifications\CourseCompleted;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -152,6 +153,8 @@ class EnrollmentController extends Controller
                 'subject_id' => $course->id,
                 'properties' => ['course_title' => $course->title],
             ]);
+
+            $user->notify(new CourseCompleted($course));
         }
 
         return Inertia::render('Courses/Learn', [
@@ -199,6 +202,8 @@ class EnrollmentController extends Controller
                     'subject_id' => $course->id,
                     'properties' => ['course_title' => $course->title],
                 ]);
+
+                $user->notify(new CourseCompleted($course));
             }
         }
 

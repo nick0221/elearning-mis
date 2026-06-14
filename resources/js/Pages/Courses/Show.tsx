@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
+import { Textarea } from '@/Components/ui/textarea';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
@@ -409,12 +410,11 @@ export default function Show({
                                             </button>
                                         ))}
                                     </div>
-                                    <textarea
+                                    <Textarea
                                         value={reviewForm.body}
                                         onChange={(e) => setReviewForm((f) => ({ ...f, body: e.target.value }))}
                                         rows={3}
                                         placeholder="Share your thoughts about this course..."
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                     />
                                     <div className="mt-3 flex justify-end gap-2">
                                         {userReview && (

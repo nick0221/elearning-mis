@@ -16,6 +16,7 @@ declare namespace App {
             success: string | null;
             error: string | null;
         };
+        unreadNotificationsCount: number;
         [key: string]: unknown;
     }
 }

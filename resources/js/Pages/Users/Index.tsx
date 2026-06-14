@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
 import EmptyState from '@/Components/EmptyState';
+import { Input } from '@/Components/ui/input';
 import { Head, Link, router } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import { useState } from 'react';
@@ -63,12 +64,11 @@ export default function Index({ users, filters }: { users: PaginatedData; filter
                     />
                     <div className="mb-6 flex items-center justify-between">
                         <form onSubmit={handleSearch} className="flex gap-2">
-                            <input
+                            <Input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search users..."
-                                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                             <button
                                 type="submit"

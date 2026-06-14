@@ -1,4 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Input } from '@/Components/ui/input';
+import { Textarea } from '@/Components/ui/textarea';
+import { Select } from '@/Components/ui/select';
+import { Label } from '@/Components/ui/label';
 import { Head, Link, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 
@@ -26,38 +30,35 @@ export default function Create({ courses }: { courses: Course[] }) {
                     <div className="rounded-xl border border-border bg-card shadow-sm">
                         <form onSubmit={submit} className="p-6 space-y-5">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-foreground">Course</label>
-                                <select
+                                <Label>Course</Label>
+                                <Select
                                     value={data.course_id}
                                     onChange={(e) => setData('course_id', e.target.value)}
-                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
                                     <option value="">Select a course...</option>
                                     {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                                </select>
+                                </Select>
                                 {errors.course_id && <p className="text-sm text-destructive">{errors.course_id}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-foreground">Title</label>
-                                <input
+                                <Label>Title</Label>
+                                <Input
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData('title', e.target.value)}
                                     placeholder="Give your discussion a clear, descriptive title"
-                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
                                 {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-foreground">Content</label>
-                                <textarea
+                                <Label>Content</Label>
+                                <Textarea
                                     value={data.body}
                                     onChange={(e) => setData('body', e.target.value)}
                                     rows={6}
                                     placeholder="Describe your question, idea, or topic in detail..."
-                                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring resize-y min-h-[160px]"
                                 />
                                 <div className="flex justify-between items-center">
                                     {errors.body && <p className="text-sm text-destructive">{errors.body}</p>}

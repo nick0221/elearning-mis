@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ConfirmDialog from '@/Components/ConfirmDialog';
+import { Input } from '@/Components/ui/input';
 import { Head, useForm } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
@@ -195,7 +196,7 @@ export default function Take({ assessment, submission }: { assessment: Assessmen
                         )}
 
                         {question.type === 'fill_blank' && (
-                            <input type="text" value={answers[question.id]?.text_answer || ''} onChange={(e) => setAnswer(question.id, { text_answer: e.target.value })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="Your answer" />
+                            <Input type="text" value={answers[question.id]?.text_answer || ''} onChange={(e) => setAnswer(question.id, { text_answer: e.target.value })} placeholder="Your answer" />
                         )}
 
                         {/* Navigation */}

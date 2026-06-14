@@ -1,7 +1,7 @@
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
+import Button from '@/Components/ui/button';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -88,7 +88,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                     <span className="ms-2 text-sm text-muted-foreground">Remember me</span>
                 </div>
 
-                <PrimaryButton className="w-full justify-center gap-2" disabled={processing}>
+                <Button className="w-full justify-center gap-2" disabled={processing}>
                     {processing ? (
                         <>
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -97,7 +97,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                     ) : (
                         'Sign in'
                     )}
-                </PrimaryButton>
+                </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
                     Don't have an account?{' '}

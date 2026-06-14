@@ -1,4 +1,4 @@
-import PrimaryButton from '@/Components/PrimaryButton';
+import Button from '@/Components/ui/button';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
@@ -33,7 +33,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
             )}
 
             <form onSubmit={submit} className="mt-6 space-y-4">
-                <PrimaryButton className="w-full justify-center gap-2" disabled={processing}>
+                <Button className="w-full justify-center gap-2" disabled={processing}>
                     {processing ? (
                         <>
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -42,7 +42,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     ) : (
                         'Resend verification email'
                     )}
-                </PrimaryButton>
+                </Button>
 
                 <Link
                     href={route('logout')}

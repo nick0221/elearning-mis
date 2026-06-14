@@ -1,7 +1,8 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
+import Button from '@/Components/ui/button';
 import TextInput from '@/Components/TextInput';
+import { Textarea } from '@/Components/ui/textarea';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
@@ -113,12 +114,11 @@ export default function UpdateProfileInformation({
 
                 <div>
                     <InputLabel htmlFor="bio" value="Bio" />
-                    <textarea
+                    <Textarea
                         id="bio"
                         value={data.bio}
                         onChange={(e) => setData('bio', e.target.value)}
                         rows={3}
-                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         placeholder="Tell us about yourself..."
                     />
                     <InputError className="mt-2" message={errors.bio} />
@@ -157,9 +157,9 @@ export default function UpdateProfileInformation({
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>
+                    <Button disabled={processing}>
                         {processing ? 'Saving...' : 'Save'}
-                    </PrimaryButton>
+                    </Button>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"

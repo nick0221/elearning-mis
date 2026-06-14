@@ -1,6 +1,6 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
+import Button from '@/Components/ui/button';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
@@ -80,7 +80,7 @@ export default function ResetPassword({ token, email }: { token: string; email: 
                     <InputError message={errors.password_confirmation} className="mt-2" />
                 </div>
 
-                <PrimaryButton className="w-full justify-center gap-2" disabled={processing}>
+                <Button className="w-full justify-center gap-2" disabled={processing}>
                     {processing ? (
                         <>
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -89,7 +89,7 @@ export default function ResetPassword({ token, email }: { token: string; email: 
                     ) : (
                         'Reset password'
                     )}
-                </PrimaryButton>
+                </Button>
             </form>
         </GuestLayout>
     );

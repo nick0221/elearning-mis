@@ -1,5 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
+import { Input } from '@/Components/ui/input';
+import { Textarea } from '@/Components/ui/textarea';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
@@ -144,29 +146,14 @@ export default function Grade({ assessment, submission }: {
                                 <label htmlFor="score" className="block text-sm font-medium text-foreground">
                                     Score (max {totalPoints})
                                 </label>
-                                <input
-                                    id="score"
-                                    type="number"
-                                    min={0}
-                                    max={totalPoints}
-                                    value={data.score}
-                                    onChange={(e) => setData('score', Number(e.target.value))}
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-                                />
+                                <Input id="score" type="number" min={0} max={totalPoints} value={data.score} onChange={(e) => setData('score', Number(e.target.value))} />
                                 {errors.score && <p className="mt-1 text-sm text-destructive">{errors.score}</p>}
                             </div>
                             <div>
                                 <label htmlFor="feedback" className="block text-sm font-medium text-foreground">
                                     Feedback
                                 </label>
-                                <textarea
-                                    id="feedback"
-                                    rows={4}
-                                    value={data.feedback}
-                                    onChange={(e) => setData('feedback', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-                                    placeholder="Optional feedback for the student..."
-                                />
+                                <Textarea id="feedback" rows={4} value={data.feedback} onChange={(e) => setData('feedback', e.target.value)} placeholder="Optional feedback for the student..." />
                                 {errors.feedback && <p className="mt-1 text-sm text-destructive">{errors.feedback}</p>}
                             </div>
                             <div className="flex gap-3">

@@ -1,5 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
+import { Input } from '@/Components/ui/input';
+import { Select } from '@/Components/ui/select';
+import { Textarea } from '@/Components/ui/textarea';
+import { Label } from '@/Components/ui/label';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import RichTextEditor from '@/Components/RichTextEditor';
@@ -69,14 +73,14 @@ function SortableModule({
         <div ref={setNodeRef} style={style} className="rounded-lg border border-border">
             {isEditing ? (
                 <div className="border-b border-border bg-muted/50 p-4">
-                    <input
+                    <Input
                         type="text"
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         className="mb-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         autoFocus
                     />
-                    <input
+                    <Input
                         type="text"
                         value={editDesc}
                         onChange={(e) => setEditDesc(e.target.value)}
@@ -150,7 +154,7 @@ function SortableLessonItem({
                     <div className="mb-3 grid grid-cols-3 gap-3">
                         <div className="col-span-2">
                             <label className="mb-1 block text-xs font-medium text-foreground">Title</label>
-                            <input
+                            <Input
                                 type="text"
                                 value={editTitle}
                                 onChange={(e) => setEditTitle(e.target.value)}
@@ -159,7 +163,7 @@ function SortableLessonItem({
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-foreground">Type</label>
-                            <select
+                            <Select
                                 value={editType}
                                 onChange={(e) => setEditType(e.target.value)}
                                 className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -167,14 +171,14 @@ function SortableLessonItem({
                                 <option value="text">Text</option>
                                 <option value="video">Video</option>
                                 <option value="audio">Audio</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
                     {editType === 'video' && (
                         <div className="mb-3">
                             <label className="mb-1 block text-xs font-medium text-foreground">Video URL</label>
-                            <input
+                            <Input
                                 type="text"
                                 value={editVideoUrl}
                                 onChange={(e) => setEditVideoUrl(e.target.value)}
@@ -197,7 +201,7 @@ function SortableLessonItem({
 
                     <div className="mb-3">
                         <label className="mb-1 block text-xs font-medium text-foreground">Duration (minutes)</label>
-                        <input
+                        <Input
                             type="number"
                             value={editDuration}
                             onChange={(e) => setEditDuration(e.target.value)}
@@ -398,52 +402,52 @@ export default function Edit({ course, categories }: { course: Course; categorie
                             <h3 className="mb-4 text-lg font-medium text-foreground">Course Settings</h3>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Title</label>
-                                    <input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} className={inputClass} />
+                                    <Label>Title</Label>
+                                    <Input type="text" value={data.title} onChange={(e) => setData('title', e.target.value)} />
                                     {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title}</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground">Description</label>
-                                    <textarea value={data.description} onChange={(e) => setData('description', e.target.value)} rows={4} className={inputClass} />
+                                    <Label>Description</Label>
+                                    <Textarea value={data.description} onChange={(e) => setData('description', e.target.value)} rows={4} />
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Category</label>
-                                        <select value={data.category_id} onChange={(e) => setData('category_id', e.target.value)} className={inputClass}>
+                                        <Label>Category</Label>
+                                        <Select value={data.category_id} onChange={(e) => setData('category_id', e.target.value)}>
                                             <option value="">No category</option>
                                             {categories.map((cat) => (
                                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                                             ))}
-                                        </select>
+                                        </Select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Difficulty</label>
-                                        <select value={data.difficulty} onChange={(e) => setData('difficulty', e.target.value)} className={inputClass}>
+                                        <Label>Difficulty</Label>
+                                        <Select value={data.difficulty} onChange={(e) => setData('difficulty', e.target.value)}>
                                             <option value="beginner">Beginner</option>
                                             <option value="intermediate">Intermediate</option>
                                             <option value="advanced">Advanced</option>
-                                        </select>
+                                        </Select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Status</label>
-                                        <select value={data.status} onChange={(e) => setData('status', e.target.value)} className={inputClass}>
+                                        <Label>Status</Label>
+                                        <Select value={data.status} onChange={(e) => setData('status', e.target.value)}>
                                             <option value="draft">Draft</option>
                                             <option value="published">Published</option>
                                             <option value="archived">Archived</option>
-                                        </select>
+                                        </Select>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Max Students</label>
-                                        <input type="number" value={data.max_students} onChange={(e) => setData('max_students', e.target.value)} className={inputClass} min="1" />
+                                        <Label>Max Students</Label>
+                                        <Input type="number" value={data.max_students} onChange={(e) => setData('max_students', e.target.value)} min="1" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-foreground">Duration (minutes)</label>
-                                        <input type="number" value={data.estimated_duration_minutes} onChange={(e) => setData('estimated_duration_minutes', e.target.value)} className={inputClass} min="1" />
+                                        <Label>Duration (minutes)</Label>
+                                        <Input type="number" value={data.estimated_duration_minutes} onChange={(e) => setData('estimated_duration_minutes', e.target.value)} min="1" />
                                     </div>
                                 </div>
                             </div>
@@ -475,7 +479,7 @@ export default function Edit({ course, categories }: { course: Course; categorie
                             {/* New Module Form */}
                             {showNewModule && (
                                 <div className="mb-4 rounded-lg border border-border p-4">
-                                    <input
+                                    <Input
                                         type="text"
                                         value={newModuleTitle}
                                         onChange={(e) => setNewModuleTitle(e.target.value)}
@@ -483,7 +487,7 @@ export default function Edit({ course, categories }: { course: Course; categorie
                                         className="mb-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                         autoFocus
                                     />
-                                    <input
+                                    <Input
                                         type="text"
                                         value={newModuleDesc}
                                         onChange={(e) => setNewModuleDesc(e.target.value)}

@@ -2,6 +2,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PageHeader from '@/Components/PageHeader';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
+import { Input } from '@/Components/ui/input';
+import { Select } from '@/Components/ui/select';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { Search, ArrowUpDown, CheckCircle, Clock, BookOpen, LayoutGrid, List, Award, ArrowRight, ExternalLink, FilterX } from 'lucide-react';
@@ -260,7 +262,7 @@ export default function MyCourses({ enrollments, filters, categories }: { enroll
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="relative flex-1 max-w-md">
                                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <input
+                                    <Input
                                         type="text"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
@@ -286,7 +288,7 @@ export default function MyCourses({ enrollments, filters, categories }: { enroll
                                     </div>
                                     <div className="relative">
                                         <ArrowUpDown className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                                        <select
+                                        <Select
                                             value={sort}
                                             onChange={(e) => applyFilter('sort', e.target.value)}
                                             className="appearance-none rounded-md border border-input bg-background pl-8 pr-8 py-1.5 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -294,7 +296,7 @@ export default function MyCourses({ enrollments, filters, categories }: { enroll
                                             <option value="recent">Recent</option>
                                             <option value="oldest">Oldest</option>
                                             <option value="title">A-Z</option>
-                                        </select>
+                                        </Select>
                                     </div>
                                     <div className="flex rounded-md border border-border overflow-hidden">
                                         <button

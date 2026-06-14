@@ -2,10 +2,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
 import PageHeader from '@/Components/PageHeader';
 import Pagination from '@/Components/Pagination';
+import { Input } from '@/Components/ui/input';
+import { Textarea } from '@/Components/ui/textarea';
+import { Select } from '@/Components/ui/select';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 
 interface User { id: number; name: string; }
 interface Course { id: number; title: string; }
@@ -51,20 +54,6 @@ function CalendarIcon({ className }: { className?: string }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
     );
-}
-
-function formatRelativeTime(dateString: string): string {
-    const now = Date.now();
-    const date = new Date(dateString).getTime();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default function Index({ announcements, filters, courses }: {
@@ -139,7 +128,7 @@ export default function Index({ announcements, filters, courses }: {
                     {showForm && (
                         <form onSubmit={submit} className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
                             <div>
-                                <input
+                                <Input
                                     type="text"
                                     value={data.title}
                                     onChange={(e) => setData('title', e.target.value)}
@@ -148,12 +137,11 @@ export default function Index({ announcements, filters, courses }: {
                                 />
                             </div>
                             <div>
-                                <textarea
+                                <Textarea
                                     value={data.body}
                                     onChange={(e) => setData('body', e.target.value)}
                                     rows={4}
                                     placeholder="Write your announcement content..."
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-y min-h-[100px]"
                                 />
                             </div>
                             <div className="flex items-center justify-between">
@@ -200,26 +188,16 @@ export default function Index({ announcements, filters, courses }: {
                                 <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search announcements..."
-                                    className="flex h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                />
+                                <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search announcements..." className="pl-10" />
                             </div>
                             <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Search</button>
                         </form>
-                        <select
-                            value={courseFilter}
-                            onChange={(e) => handleCourseFilter(e.target.value)}
-                            className="h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <Select value={courseFilter} onChange={(e) => handleCourseFilter(e.target.value)}>
                             <option value="">All courses</option>
                             {courses.map((c) => (
                                 <option key={c.id} value={c.id}>{c.title}</option>
                             ))}
-                        </select>
+                        </Select>
                     </div>
 
                     {hasActiveFilters && (

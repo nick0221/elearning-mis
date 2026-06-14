@@ -1,5 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import EmptyState from '@/Components/EmptyState';
+import { Input } from '@/Components/ui/input';
+import { Select } from '@/Components/ui/select';
 import { Head, Link, router } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import { useState } from 'react';
@@ -108,7 +110,7 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
                                 <svg className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input
+                                <Input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -145,7 +147,7 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
 
                         <div className="flex items-center gap-2">
                             {/* Sort Dropdown */}
-                            <select
+                            <Select
                                 value={filters.sort || ''}
                                 onChange={(e) => handleSort(e.target.value)}
                                 className="rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -154,7 +156,7 @@ export default function Index({ courses, categories, filters }: { courses: Pagin
                                 <option value="oldest">Oldest</option>
                                 <option value="title">Title A-Z</option>
                                 <option value="popular">Most Popular</option>
-                            </select>
+                            </Select>
 
                             {/* View Mode Toggle */}
                             <div className="flex rounded-lg border border-border">

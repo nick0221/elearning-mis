@@ -1,8 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Textarea } from '@/Components/ui/textarea';
 import { Head, useForm, usePage, router, Link } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 
 interface User { id: number; name: string; }
 interface Reply { id: number; body: string; created_at: string; user: User; parent_id?: number; parent?: Reply; }
@@ -22,20 +23,6 @@ function CalendarIcon({ className }: { className?: string }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
     );
-}
-
-function formatRelativeTime(dateString: string): string {
-    const now = Date.now();
-    const date = new Date(dateString).getTime();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default function Show({ discussion }: { discussion: Discussion }) {
@@ -202,12 +189,12 @@ export default function Show({ discussion }: { discussion: Discussion }) {
                                     </span>
                                 )}
                             </div>
-                            <textarea
+                            <Textarea
                                 value={data.body}
                                 onChange={(e) => setData('body', e.target.value)}
                                 rows={3}
                                 placeholder={replyTo ? `Reply to ${replyTo.name}...` : 'Write a reply...'}
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                                className="resize-none"
                             />
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-muted-foreground">{data.body.length}/2000</span>
