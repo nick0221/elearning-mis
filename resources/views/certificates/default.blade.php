@@ -124,7 +124,7 @@
                 </div>
                 <div>
                     <div class="label">Certificate ID</div>
-                    <div class="value">#{{ $course->id }}-{{ $enrollment->id }}</div>
+                    <div class="value">{{ $certificate->certificate_number }}</div>
                 </div>
             </div>
         </div>
